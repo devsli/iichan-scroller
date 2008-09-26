@@ -57,7 +57,7 @@ def load_image(filename):
 		image = pygame.transform.scale(image, (image.get_width()*2, image.get_height()*2))
 	except pygame.error:
 		raise SystemExit, "Unable to load: " + filename
-	return image.convert()
+	return image.convert_alpha()
 
 def load_sound(filename, volume=0.5):
     filename = filepath(filename)
