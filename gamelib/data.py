@@ -51,13 +51,13 @@ def load_anim(file, mode="P"):
     return frames
 
 def load_image(filename):
-	filename = filepath(filename)
-	try:
-		image = pygame.image.load(filename)
-		image = pygame.transform.scale(image, (image.get_width()*2, image.get_height()*2))
-	except pygame.error:
-		raise SystemExit, "Unable to load: " + filename
-	return image.convert_alpha()
+    filename = filepath(filename)
+    try:
+        image = pygame.image.load(filename)
+        image = pygame.transform.scale(image, (image.get_width()*2, image.get_height()*2))
+    except pygame.error:
+        raise SystemExit, "Unable to load: " + filename
+    return image.convert_alpha()
 
 def load_sound(filename, volume=0.5):
     filename = filepath(filename)

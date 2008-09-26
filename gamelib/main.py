@@ -16,11 +16,11 @@ def main():
     pygame.init()
     pygame.display.set_icon(pygame.image.load(data.filepath("loli_still.gif")))
     pygame.display.set_caption('Codename: because she said no')
-    
+
     if config.widescreen:
-    	width = 768
+      width = 768
     else:
-    	width = 640
+      width = 640
 
     if config.fullscreen:
         screen = pygame.display.set_mode((width, 480), pygame.FULLSCREEN, 32)
@@ -28,4 +28,4 @@ def main():
     else:
         screen = pygame.display.set_mode((width, 480))
 
-    Game(screen)
+    Game(screen, config)
