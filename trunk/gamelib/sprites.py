@@ -1,6 +1,4 @@
 #! /usr/bin/env python
-from django.contrib.sessions.backends.base import randrange
-
 import pygame, random, math
 from pygame.locals import *
 
