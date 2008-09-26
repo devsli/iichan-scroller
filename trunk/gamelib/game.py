@@ -13,6 +13,9 @@ from level import *
 def RelRect(actor, camera):
     return Rect(actor.rect.x-camera.rect.x, actor.rect.y-camera.rect.y, actor.rect.w, actor.rect.h)
 
+def RelProjection(actor, camera):
+    return Rect(actor.projection.x-camera.rect.x, actor.projection.y-camera.rect.y, actor.projection.w, actor.projection.h)
+
 class Camera(object):
     def __init__(self, player, width):
         self.player = player
@@ -29,6 +32,7 @@ class Camera(object):
         if self.player.rect.centery < self.rect.centery-32:
             self.rect.centery = self.player.rect.centery+32
         self.rect.clamp_ip(self.world)
+
     def draw_sprites(self, surf, sprites):
         for s in sprites:
             if s.rect.colliderect(self.rect):
@@ -36,24 +40,27 @@ class Camera(object):
 
 class Game(object):
 
-    def __init__(self, screen, continuing=False):
-        
+    def __init__(self, screen, config, continuing=False):
+
         self.screen = screen
+        self.config = config
         self.sprites = pygame.sprite.OrderedUpdates()
         self.shots = pygame.sprite.OrderedUpdates()
         self.monsters = pygame.sprite.OrderedUpdates()
         self.powerups = pygame.sprite.OrderedUpdates()
         self.players = pygame.sprite.OrderedUpdates()
-        
+        self.static = pygame.sprite.OrderedUpdates()
+
         PowerUp.groups = self.sprites, self.powerups
         Player.groups = self.sprites, self.players
         PlayerShot.groups = self.sprites, self.shots
         Betard.groups = self.sprites, self.monsters
+        Static.groups = self.sprites, self.static
 
         # Load animation once
         self.heart = load_image("heart_bar.gif")
         self.cells = load_image("cell_bar.gif")
-        
+
         Player.gifs = {
             "idle": load_anim("loli_idle.gif"),
             "jump": load_anim("loli_jump.gif"),
@@ -72,61 +79,67 @@ class Game(object):
             "idle": load_anim("betard_idle.gif"),
             "walk": load_anim("betard_walk.gif"),
         }
-        
+        Static.images = {
+            "box" : load_image("box.png"),
+            "barrel" : load_image("barrel.png"),
+        }
+
         self.score = 0
         self.lives = 3
         self.lvl   = 1
-        
+
         self.clock = pygame.time.Clock()
         self.level = Level(self.lvl)
-        self.bg = self.level.bg
-        self.player = Player((100, 250))
+        self.player = self.level.player
         self.camera = Camera(self.player, self.level.get_size()[0])
         self.font = pygame.font.Font(filepath("font.ttf"), 16)
-        
+
+        self.player.collide(self.static)
+
+
         self.running = 1
         self.music = "because_she_said_no.ogg"
         play_music(self.music, 0.5)
-        
+
         self.main_loop()
-        
+
     def end(self):
         self.running = 0
-        
+
     def redo_level(self):
         if self.running:
             self.clear_sprites()
             self.level = Level(self.lvl)
             self.player = Player((0, 0))
             self.camera = Camera(self.player, self.level.get_size()[0])
-    
+
     def show_death(self):
         ren = self.font.render("Why so slow?", 1, (255, 255, 255))
         self.screen.blit(ren, (180-ren.get_width()/2, 135))
         pygame.display.flip()
         pygame.time.wait(2500)
-        
+
     def gameover_screen(self):
         self.end()
-        
+
     def winrar(self):
         self.draw_stats()
         ren = self.font.render("You are WINRAR!", 1, (255, 255, 255), (0, 0, 0))
         self.screen.blit(ren, (320-ren.get_width()/2, 235))
         pygame.display.flip()
         pygame.time.wait(2500)
-          
+
     def clear_sprites(self):
         for sprite in self.sprites:
             pygame.sprite.Sprite.kill(sprite)
-            
+
     def main_loop(self):
-        
+
         while self.running:
 
             self.clock.tick(60)
             self.camera.update()
-            
+
             # Reacting on keystrokes
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -137,21 +150,25 @@ class Game(object):
                     elif event.key == K_SPACE:
                         if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
                             if self.player.state in ["duck", "walk"]:
-                                PlayerShot(
+                                shot = PlayerShot(
                                     self.player.rect.center,
-                                    self.player.facing, 
-                                    self.player.gifs["blast"]
+                                    self.player.facing,
+                                    self.player.gifs["blast"],
+                                    self.player
                                 )
+                                shot.collide(self.static)
                             else:
-                                PlayerShot(
+                                shot = PlayerShot(
                                     (self.player.rect.center[0], self.player.rect.center[1]-25),
-                                    self.player.facing, 
-                                    self.player.gifs["blast"]
+                                    self.player.facing,
+                                    self.player.gifs["blast"],
+                                    self.player
                                 )
+                                shot.collide(self.static)
                             self.player.shoot()
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
-            
+
             for powerup in self.powerups:
                 if self.player.rect.colliderect(powerup.rect):
                     # Pickup animation
@@ -165,18 +182,35 @@ class Game(object):
                     elif powerup.type == "logo":
                         self.player.score += 25
                         powerup.kill()
-            
+
             # Updating all sprites
             for s in self.sprites:
                 s.update()
-                
-            # Scrolling background
-            self.screen.blit(self.bg, ((-self.camera.rect.x)%800, 0))
-            self.screen.blit(self.bg, ((-self.camera.rect.x)%800 + 800, 0))
-            self.screen.blit(self.bg, ((-self.camera.rect.x)%800 - 800, 0))
+
+            # draw 3 bg layers
+            # TODO: add clipping invisible backgrounds
+            for bg in self.level.backgrounds_layers[2]:
+                self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * 0.2, bg.y))
+
+            for bg in self.level.backgrounds_layers[1]:
+                   self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * 0.9, bg.y))
+
+            for bg in self.level.backgrounds_layers[0]:
+                   self.screen.blit(bg.texture, (bg.x - self.camera.rect.x, bg.y))
+
             self.camera.draw_sprites(self.screen, self.sprites)
+
+            # show bboxes for debugging and easy objects creating
+            if self.config.show_bboxes:
+                for sprite in self.sprites:
+                    pygame.draw.rect(self.screen, (255, 0, 0),  RelRect(sprite, self.camera), 1)
+
+                for sprite in self.sprites:
+                    pygame.draw.rect(self.screen, (0, 255, 0),  RelProjection(sprite, self.camera), 1)
+
+
             self.draw_stats()
-            
+
             # To be or not to be?
             if not self.player.alive() and not self.playerdying:
                 if self.lives <= 0:
@@ -185,7 +219,7 @@ class Game(object):
                     self.show_death()
                     self.lives -= 1
                     self.redo_level()
-                    
+
             pygame.display.flip()
             #pygame.time.wait(2)
 
