@@ -10,17 +10,18 @@ size = 3200, 200
 #   z - local z-index on layer
 
 #     image    layer x     y    z
-bg1 = @fence1,  0,   0,    000,  0
-bg2 = @house,   0,   800,  000,  0
-bg3 = @fence1,  0,   1600, 000,  0
-bg9 = @house2,   0,   2400,  000,  0
+f1 = @fence1,  0,   0,    000,  0
+h1 = @house,   0,   800,  000,  0
+f2 = @fence1,  0,   1600, 000,  0
+h2 = @house2,   0,   2400,  000,  0
 
-bg4 = @bushes,   1,   0,    100,  0
-bg5 = @bushes,   1,   800,  100,  0
-bg6 = @bushes,   1,   1600, 100,  0
+b1 = @bushes,   1,   0,    100,  0
+b2 = @bushes,   1,   800,  100,  0
+b3 = @bushes,   1,   1600, 100,  0
+b4 = @bushes,   1,   2400, 100,  0
 
-bg7 = @sky,      2,   0,   -100, 1
-bg8 = @sky,      2,   790, -100, 1
+s1 = @sky,      2,   0,   -100, 1
+s2 = @sky,      2,   790, -100, 1
 
 [objects]
 #         object   x    y    z, dir
@@ -33,4 +34,4 @@ box2    = box,    800, 400,  0,
 barrel1 = barrel, 600, 350,  0,
 barrel2 = barrel, 620, 300,  1,
 
-en = betard, 680, 260, 0, right
+en = betard, 200, 260, 0, right
