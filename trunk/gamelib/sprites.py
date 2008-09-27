@@ -81,8 +81,12 @@ class Simple(pygame.sprite.Sprite):
         self.xoffset = 0
         self.yoffset = 0
 
-    def draw(self, surf):
-        surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
+    #def draw(self, surf):
+        #surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
+    #    pass
+
+    def get_projection(self):
+        return self.rect
 
 class Player(Collidable):
     def __init__(self, pos):
@@ -187,7 +191,10 @@ class Player(Collidable):
         PlayerDie(self.rect.center, self.facing)
 
     def get_projection(self):
-        return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+        if self.facing == 1:
+            return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+        else:
+            return Rect(self.rect[0] + 40, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
 
 class PlayerShot(Collidable):
 
@@ -264,21 +271,6 @@ class PowerUpDie(Collidable):
     def get_projection(self):
         return self.rect
 
-class Balloon(Simple):
-    def __init__(self, pos):
-        Simple.__init__(self, self.groups)
-        self.rect = self.image.get_rect(center = pos)
-        self.timer = 0
-
-    def update(self):
-        self.timer += 1
-        if self.timer < 30:
-            return
-        self.kill()
-
-    def get_projection(self):
-        return self.rect
-
 class Betard(Collidable):
     def __init__(self, pos, type = 1):
         Collidable.__init__(self, self.groups)
@@ -299,9 +291,6 @@ class Betard(Collidable):
         self.left_images = self.gifs[state]
         for i in range(len(self.left_images)):
             self.right_images.append(pygame.transform.flip(self.left_images[i], 1, 0))
-
-    def hit(self):
-        pass
 
     def kill(self):
         pass
@@ -340,7 +329,7 @@ class Betard(Collidable):
         Balloon((self.rect.x, self.rect.y), )
 
     def get_projection(self):
-        return self.rect
+        return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
 
 class Static(Collidable):
     def __init__(self, pos, type):
@@ -355,3 +344,20 @@ class Static(Collidable):
             return Rect(self.rect[0], self.rect[1] + 30, self.rect[2], self.rect[3] - 30)
         elif self.type == 'barrel':
             return Rect(self.rect[0], self.rect[1] + 100, self.rect[2], self.rect[3] - 100)
+
+class Balloon(Simple):
+    def __init__(self, pos):
+        Simple.__init__(self, self.groups)
+        self.rect = self.image.get_rect(center = pos)
+        self.timer = 0
+
+    def update(self):
+        self.timer += 1
+        if self.timer < 30:
+            return
+        self.kill()
+
+    def draw(self, surf):
+        surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
+        ren = self.font.render("OUCH!11", 1, (0, 0, 0))
+        self.screen.blit(ren, (1,1))

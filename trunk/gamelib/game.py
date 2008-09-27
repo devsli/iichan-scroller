@@ -198,16 +198,15 @@ class Game(object):
             for s in self.sprites:
                 s.update()
 
+            pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, 640, 480), 0)
             # draw 3 bg layers
-            # TODO: add clipping invisible backgrounds
-            for bg in self.level.backgrounds_layers[2]:
-                self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * 0.2, bg.y))
-
-            for bg in self.level.backgrounds_layers[1]:
-                   self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * 0.9, bg.y))
-
-            for bg in self.level.backgrounds_layers[0]:
-                   self.screen.blit(bg.texture, (bg.x - self.camera.rect.x, bg.y))
+            bglayer_speed = [1, 0.9, 0.2]
+            for bglayer_num in range(2, -1, -1):
+                for bg in self.level.backgrounds_layers[bglayer_num]:
+                    rect = RelRect(bg, self.camera)
+                    rect.x = bg.x - self.camera.rect.x * bglayer_speed[bglayer_num]
+                    if rect.colliderect(Rect(0, 0, 640, 480)):
+                        self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * bglayer_speed[bglayer_num], bg.y))
 
             self.camera.draw_sprites(self.screen, self.sprites)
 

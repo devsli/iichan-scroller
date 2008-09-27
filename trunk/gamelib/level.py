@@ -13,6 +13,7 @@ class Background:
         self.x = x
         self.y = y
         self.z = z
+        self.rect = self.texture.get_rect(topleft = (x, y))
 
     def __str__(self):
         return self.file
