@@ -1,5 +1,5 @@
 [general]
-size = 1500, 200
+size = 2000, 200
 [background]
 # image - filename or resourcename (from base.lvl)
 # layer - general z-index
@@ -9,14 +9,17 @@ size = 1500, 200
 #   x, y - initial position
 #   z - local z-index on layer
 
-#     image    layer  x     y    z
-bg1 = @fence1,   0,   0,   000,  0
-bg2 = @fence1,   0,   800, 000,  0
+#     image    layer x     y    z
+bg1 = @fence1,  0,   0,    000,  0
+bg2 = @house,   0,   800,  000,  0
+bg3 = @fence1,  0,   1600, 000,  0
 
-bg3 = @bushes,   1,   0,   100,  0
-bg4 = @bushes,   1,   800, 100,  0
+bg4 = @bushes,   1,   0,    100,  0
+bg5 = @bushes,   1,   800,  100,  0
+bg6 = @bushes,   1,   1600, 100,  0
 
-bg5 = @sky,      2,   0,   -100, 1
+bg7 = @sky,      2,   0,   -100, 1
+bg8 = @sky,      2,   790, -100, 1
 
 [objects]
 #         object   x    y    z, dir
