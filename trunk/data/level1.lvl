@@ -35,6 +35,7 @@ box3    = box_group, 200, 200,  0,
 box4    = box,    2750, 300,  0,
 barrel1 = barrel, 600, 350,  0,
 barrel2 = barrel, 620, 300,  1,
+tire = tire, 2400, 400,  1,
 
 en = betard, 2200, 250, 0, left
 
