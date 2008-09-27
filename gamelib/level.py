@@ -75,7 +75,7 @@ class Level:
                     Betard((x, y), facing = dir)
                 elif obj == 'player':
                     self.player = Player((x, y), dir)
-                elif obj in ['box', 'barrel', 'box_group']:
+                elif obj in ['box', 'barrel', 'box_group', 'tire']:
                     Static((x, y), obj)
 
         if 'triggers' in level.sections():
