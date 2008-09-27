@@ -25,6 +25,37 @@ def speed_to_side(dx,dy):
     else:
         return 0, 0
 
+class Particle(pygame.sprite.Sprite):
+    
+    def __init__(self, pos, vx, vy, ax, ay, size, colorstructure, projected = False):
+        pygame.sprite.Sprite.__init__(self, self.groups)
+        self.vx, self.vy, self.ax, self.ay = vx, vy, ax, ay
+        self.images = []
+        for x in colorstructure:
+            start, end, duration = x
+            startr, startg, startb = start
+            endr, endg, endb = end
+            def f(s, e, t):
+                return s + int((e - s)*(t/float(duration)))
+            for t in range(duration):
+                image = pygame.Surface((size, size)).convert()
+                image.fill((f(startr, endr, t), f(startg, endg, t), f(startb, endb, t)))
+                self.images.append(image)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(center = pos)
+        
+    def update(self):
+        self.rect.move_ip(self.vx, self.vy)
+        self.vx = self.vx + self.ax
+        self.vy = self.vy + self.ay
+        if not self.images:
+            self.kill()
+        else:
+            self.image = self.images.pop(0)
+            
+    def get_projection(self):
+        return self.rect
+
 class Collidable(pygame.sprite.Sprite):
 
     def __init__(self, *groups):
@@ -230,6 +261,13 @@ class PlayerShot(Collidable):
         self.move(self.speed, 0)
 
     def kill(self):
+        for i in range(10):
+            if self.facing < 0:
+                Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
+                     [((58, 192, 253), (247, 254, 255), 5)])
+            else: 
+                Particle(self.rect.midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
+                     [((58, 192, 253), (247, 254, 255), 5)])
         pygame.sprite.Sprite.kill(self)
 
     def on_collision(self, side, sprite, group, dx, dy):
@@ -253,23 +291,12 @@ class PowerUp(Collidable):
 
     def get_projection(self):
         return self.rect
-
-class PowerUpDie(Collidable):
-    def __init__(self, pos):
-        Collidable.__init__(self, self.groups)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect(center = pos)
-        self.timer = 0
-
-    def update(self):
-        self.timer += 1
-        if self.timer < 12:
-            self.image = self.images[self.timer/5 % len(self.images)]
-        else:
-            self.kill()
-
-    def get_projection(self):
-        return self.rect
+    
+    def kill(self):
+        for i in range(5):
+            Particle(self.rect.center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 4,
+                 [((255, 255, 255), (255, 255, 255), 10)])
+        pygame.sprite.Sprite.kill(self)
 
 class Betard(Collidable):
     def __init__(self, pos, type = 1):
