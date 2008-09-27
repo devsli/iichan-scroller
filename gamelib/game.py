@@ -44,17 +44,18 @@ class Game(object):
 
         self.screen = screen
         self.config = config
-        self.sprites = pygame.sprite.OrderedUpdates()
-        self.shots = pygame.sprite.OrderedUpdates()
-        self.monsters = pygame.sprite.OrderedUpdates()
-        self.powerups = pygame.sprite.OrderedUpdates()
-        self.players = pygame.sprite.OrderedUpdates()
-        self.static = pygame.sprite.OrderedUpdates()
+        self.sprites = pygame.sprite.LayeredUpdates()
+        self.shots = pygame.sprite.LayeredUpdates()
+        self.monsters = pygame.sprite.LayeredUpdates()
+        self.powerups = pygame.sprite.LayeredUpdates()
+        self.players = pygame.sprite.LayeredUpdates()
+        self.static = pygame.sprite.LayeredUpdates()
+        self.notstatic = pygame.sprite.LayeredUpdates()
 
-        PowerUp.groups = self.sprites, self.powerups
-        Player.groups = self.sprites, self.players
-        PlayerShot.groups = self.sprites, self.shots
-        Betard.groups = self.sprites, self.monsters
+        PowerUp.groups = self.sprites, self.powerups, self.static
+        Player.groups = self.sprites, self.players, self.notstatic
+        PlayerShot.groups = self.sprites, self.shots, self.notstatic
+        Betard.groups = self.sprites, self.monsters, self.notstatic
         Static.groups = self.sprites, self.static
 
         # Load animation once
@@ -93,6 +94,7 @@ class Game(object):
         self.player = self.level.player
         self.camera = Camera(self.player, self.level.get_size()[0])
         self.font = pygame.font.Font(filepath("font.ttf"), 16)
+        self.debug_font = pygame.font.Font(filepath("font.ttf"), 10)
 
         self.player.collide(self.static)
 
@@ -100,7 +102,11 @@ class Game(object):
         self.running = 1
         self.music = "because_she_said_no.ogg"
         play_music(self.music, 0.5)
-
+        
+        # set layers for static sprites
+        for sprite in self.sprites:
+            self.sprites.change_layer(sprite, sprite.rect.bottom)
+        
         self.main_loop()
 
     def end(self):
@@ -156,7 +162,6 @@ class Game(object):
                                     self.player.gifs["blast"],
                                     self.player
                                 )
-                                shot.collide(self.static)
                             else:
                                 shot = PlayerShot(
                                     (self.player.rect.center[0], self.player.rect.center[1]-25),
@@ -164,7 +169,8 @@ class Game(object):
                                     self.player.gifs["blast"],
                                     self.player
                                 )
-                                shot.collide(self.static)
+                            self.sprites.change_layer(shot, shot.layer)
+                            shot.collide(self.static)
                             self.player.shoot()
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
@@ -172,8 +178,8 @@ class Game(object):
             for powerup in self.powerups:
                 if self.player.rect.colliderect(powerup.rect):
                     # Pickup animation
-                    #PowerUpDie(c.rect.center)
-                    if powerup.type == "ammo":
+                    #PowerUpDie(powerup.rect.center)
+                    if powerup.type == "ammo" and self.player.hp < 100:
                         self.player.ammo += 25
                         powerup.kill()
                     elif powerup.type == "heart" and self.player.hp < 5:
@@ -199,6 +205,12 @@ class Game(object):
                    self.screen.blit(bg.texture, (bg.x - self.camera.rect.x, bg.y))
 
             self.camera.draw_sprites(self.screen, self.sprites)
+            
+            # changing layer for moving objects
+            for sprite in self.notstatic:
+                new_layer = RelRect(sprite, self.camera).bottom
+                if new_layer != self.sprites.get_layer_of_sprite(sprite): 
+                    self.sprites.change_layer(sprite, new_layer)
 
             # show bboxes for debugging and easy objects creating
             if self.config.show_bboxes:
@@ -207,7 +219,8 @@ class Game(object):
 
                 for sprite in self.sprites:
                     pygame.draw.rect(self.screen, (0, 255, 0),  RelProjection(sprite, self.camera), 1)
-
+                    ren = self.debug_font.render("%d" % self.sprites.get_layer_of_sprite(sprite), 1, (255, 255, 255))
+                    self.screen.blit(ren, RelRect(sprite, self.camera))
 
             self.draw_stats()
 
