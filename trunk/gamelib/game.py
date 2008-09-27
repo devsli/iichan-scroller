@@ -51,6 +51,7 @@ class Game(object):
         self.players = pygame.sprite.LayeredUpdates()
         self.static = pygame.sprite.LayeredUpdates()
         self.notstatic = pygame.sprite.LayeredUpdates()
+        self.particles = pygame.sprite.LayeredUpdates()
 
         PowerUp.groups = self.sprites, self.powerups, self.static
         Player.groups = self.sprites, self.players, self.notstatic
@@ -58,6 +59,7 @@ class Game(object):
         Betard.groups = self.sprites, self.monsters, self.notstatic
         Static.groups = self.sprites, self.static
         Balloon.groups = self.sprites
+        Particle.groups = self.sprites, self.particles
 
         # Load animation once
         self.heart = load_image("heart_bar.gif")
@@ -216,6 +218,10 @@ class Game(object):
                 new_layer = RelProjection(sprite, self.camera).bottom
                 if new_layer != self.sprites.get_layer_of_sprite(sprite):
                     self.sprites.change_layer(sprite, new_layer)
+            
+            # move all particles to front layer
+            for particle in self.particles:
+                self.sprites.move_to_front(particle)
 
             # show bboxes for debugging and easy objects creating
             if self.config.show_bboxes:
