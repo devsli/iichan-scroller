@@ -53,6 +53,7 @@ class Game(object):
         self.static = pygame.sprite.LayeredUpdates()
         self.notstatic = pygame.sprite.LayeredUpdates()
         self.particles = pygame.sprite.LayeredUpdates()
+        self.triggers = pygame.sprite.LayeredUpdates()
 
         PowerUp.groups = self.sprites, self.powerups, self.static
         Player.groups = self.sprites, self.players, self.notstatic
@@ -61,6 +62,9 @@ class Game(object):
         Static.groups = self.sprites, self.static
         Balloon.groups = self.sprites
         Particle.groups = self.sprites, self.particles
+        SpawnTrigger.groups = self.triggers
+
+        Collidable.game = self
 
         # Load animation once
         self.heart = load_image("heart_bar.gif")
@@ -103,12 +107,6 @@ class Game(object):
         self.debug_font = pygame.font.Font(filepath("font.ttf"), 10)
 
         DogAI.player = self.player
-
-        self.player.collide(self.static)
-
-        for monster in self.monsters:
-            monster.collide(self.static)
-            monster.collide(self.players)
 
         self.running = 1
         self.music = "because_she_said_no.ogg"
@@ -153,7 +151,6 @@ class Game(object):
     def main_loop(self):
 
         while self.running:
-
             self.clock.tick(60)
             self.camera.update()
 
@@ -182,8 +179,6 @@ class Game(object):
                                 )
                             self.sprites.change_layer(shot, shot.layer)
                             self.player.shoot()
-                            shot.collide(self.static)
-                            shot.collide(self.monsters)
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
 
@@ -222,7 +217,7 @@ class Game(object):
                 new_layer = RelProjection(sprite, self.camera).bottom
                 if new_layer != self.sprites.get_layer_of_sprite(sprite):
                     self.sprites.change_layer(sprite, new_layer)
-            
+
             # move all particles to front layer
             for particle in self.particles:
                 self.sprites.move_to_front(particle)
@@ -236,6 +231,9 @@ class Game(object):
                     pygame.draw.rect(self.screen, (0, 255, 0),  RelProjection(sprite, self.camera), 1)
                     ren = self.debug_font.render("%d" % self.sprites.get_layer_of_sprite(sprite), 1, (255, 255, 255))
                     self.screen.blit(ren, RelRect(sprite, self.camera))
+
+                for trigger in self.triggers:
+                    pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger, self.camera), 1)
 
             self.draw_stats()
 

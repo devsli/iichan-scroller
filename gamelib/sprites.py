@@ -65,9 +65,6 @@ class Particle(Simple):
         else:
             self.image = self.images.pop(0)
 
-    def get_projection(self):
-        return self.rect
-
 class Collidable(pygame.sprite.Sprite):
 
     def __init__(self, *groups):
@@ -102,12 +99,13 @@ class Collidable(pygame.sprite.Sprite):
             for spr in group:
                 if spr.rect.colliderect(self.rect) and spr.get_projection().colliderect(proj):
                     self.on_collision(side, spr, group, dx, dy)
+                    spr.on_collision(side, self, group, 0, 0)
 
         return self.rect.left-oldr.left,self.rect.top-oldr.top
 
     def on_collision(self, side, sprite, group, dx, dy):
-        #self.rect.move_ip(-dx, -dy)
         pass
+
 
     def draw(self, surf, rect):
         surf.blit(self.image, rect)
@@ -132,6 +130,10 @@ class Player(Collidable):
         self.ammo = 20
         self.score = 0
         self.frame = 0
+
+        self.collide(self.game.static)
+        self.collide(self.game.monsters)
+        self.collide(self.game.triggers)
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -249,6 +251,9 @@ class PlayerShot(Collidable):
         self.layer = self.get_projection().bottom
         self.timer = 0
 
+        self.collide(self.game.static)
+        self.collide(self.game.monsters)
+
     def update(self):
         if self.timer < 6:
             frame = 1
@@ -301,8 +306,8 @@ class PowerUp(Collidable):
 
 
 class DogAI():
-    visibility_range = 300
-    surrender_range = 500
+    visibility_range = 450
+    surrender_range = 600
     attack_range = 0
     player_path = []
 
@@ -353,9 +358,10 @@ class DogAI():
                     self.player_path = self.player_path[1:]
 
                 # checking if player trying run around mob
-                if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
-                    self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
-                    self.player_path = []
+                if len(self.player_path) > 0:
+                    if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
+                        self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
+                        self.player_path = []
 
         # adding new path points
         if self.state in ["walk"]:
@@ -397,6 +403,9 @@ class Betard(Collidable, DogAI):
         self.life = 2
         self.facing = facing
 
+        self.collide(self.game.static)
+        self.collide(self.game.players)
+
     def set_state(self, state = "idle"):
         self.state = state
         self.right_images = []
@@ -423,12 +432,11 @@ class Betard(Collidable, DogAI):
         if self.xspeed < 0:
             self.image = self.left_images[self.timer/9 % len(self.left_images)]
 
-        #self.image = self.images[self.timer/9 % len(self.images)]
         self.timer += 1
         self.move(self.xspeed, self.yspeed)
 
     def on_collision(self, side, sprite, group, dx, dy):
-        self.rect.move_ip(-dx*2, -dy*2)
+        self.rect.move_ip(-dx, -dy)
 
     def hit(self):
         self.life -= 1
@@ -453,6 +461,9 @@ class Static(Collidable):
         elif self.type == 'box_group':
             return Rect(self.rect[0], self.rect[1] + 170, self.rect[2], self.rect[3] - 170)
 
+    def on_collision(self, side, sprite, group, dx, dy):
+        sprite.rect.move_ip(-dx, -dy)
+
 class Balloon(Simple):
     def __init__(self, initiator_rect, text):
         Simple.__init__(self, self.groups)
@@ -473,3 +484,23 @@ class Balloon(Simple):
         surf.blit(self.image, rect)
         ren = self.font.render(self.text, 1, (0, 0, 0))
         surf.blit(ren, (rect.centerx-ren.get_width()/2, rect.centery-ren.get_height()/2 - 5))
+
+class SpawnTrigger(Collidable):
+    def __init__(self, rect, spawnobj, spawnx, spawny, spawndir):
+        Collidable.__init__(self, self.groups)
+        self.rect = rect
+        self.spawnobj = spawnobj
+        self.spawnx = spawnx
+        self.spawny = spawny
+        self.spawndir = spawndir
+
+    def draw(self, surf, rect):
+        pass
+
+    def on_collision(self, side, sprite, group, dx, dy):
+        if self.spawnobj == 'betard':
+            Betard((self.spawnx, self.spawny), facing = self.spawndir)
+        self.kill()
+
+
+

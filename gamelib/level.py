@@ -78,6 +78,23 @@ class Level:
                 elif obj in ['box', 'barrel', 'box_group']:
                     Static((x, y), obj)
 
+        if 'triggers' in level.sections():
+            for trigger in level.items('triggers'):
+                all = trigger[1].split(',')
+                obj = all[0].strip()
+                if obj == 'spawn_trigger':
+                    obj, x, y, w, h, spawnobj, spawnx, spawny, spawndir = trigger[1].split(',')
+                    x = int(x)
+                    y = int(y)
+                    w = int(w)
+                    h = int(h)
+                    spawnobj = spawnobj.strip()
+                    spawnx = int(spawnx)
+                    spawny = int(spawny)
+                    spawndir = dir = -1 if spawndir.strip() == "left" else 1
+                    SpawnTrigger(Rect(x, y, w, h), spawnobj, spawnx, spawny, spawndir)
+
+
     def get_size(self):
         return self.size
 
