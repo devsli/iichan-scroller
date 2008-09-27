@@ -334,34 +334,35 @@ class DogAI():
                 return
             else:
                 # get next point from player's path
-                path_point = self.get_nearest_path_point()
-                xdist = abs(self.rect.centerx - path_point[0])
-                ydist = abs(self.rect.centery - path_point[1])
-
-                # goto point
-                if self.rect.centerx < path_point[0]:
-                    self.xspeed = +self.speed
-                elif self.rect.centerx > path_point[0]:
-                    self.xspeed = -self.speed
-                else:
-                    xspeed = 0
-
-                if self.rect.centery < path_point[1]:
-                    self.yspeed = +self.speed
-                elif self.rect.centery > path_point[1]:
-                    self.yspeed = -self.speed
-                else:
-                    yspeed = 0
-
-                # if we in place - remove this point from path
-                if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
-                    self.player_path = self.player_path[1:]
-
-                # checking if player trying run around mob
                 if len(self.player_path) > 0:
-                    if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
-                        self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
-                        self.player_path = []
+                    path_point = self.get_nearest_path_point()
+                    xdist = abs(self.rect.centerx - path_point[0])
+                    ydist = abs(self.rect.centery - path_point[1])
+
+                    # goto point
+                    if self.rect.centerx < path_point[0]:
+                        self.xspeed = +self.speed
+                    elif self.rect.centerx > path_point[0]:
+                        self.xspeed = -self.speed
+                    else:
+                        xspeed = 0
+
+                    if self.rect.centery < path_point[1]:
+                        self.yspeed = +self.speed
+                    elif self.rect.centery > path_point[1]:
+                        self.yspeed = -self.speed
+                    else:
+                        yspeed = 0
+
+                    # if we in place - remove this point from path
+                    if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
+                        self.player_path = self.player_path[1:]
+
+                    # checking if player trying run around mob
+                    if len(self.player_path) > 0:
+                        if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
+                            self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
+                            self.player_path = []
 
         # adding new path points
         if self.state in ["walk"]:
@@ -433,6 +434,12 @@ class Betard(Collidable, DogAI):
         if self.xspeed < 0:
             self.image = self.left_images[self.timer/9 % len(self.left_images)]
 
+        if self.state == "pain":
+            if self.pain_timer == 0:
+                self.set_state("walk")
+            self.pain_timer -= 1
+
+
         self.timer += 1
         self.move(self.xspeed, self.yspeed)
 
@@ -443,6 +450,10 @@ class Betard(Collidable, DogAI):
         self.life -= 1
         if self.life > 0:
             Balloon(self.rect, "OUCH!!!")
+            self.set_state("pain")
+            self.xspeed = 0
+            self.yspeed = 0
+            self.pain_timer = 10
 
     def get_projection(self):
         return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)

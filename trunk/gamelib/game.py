@@ -87,6 +87,7 @@ class Game(object):
         Betard.gifs = {
             "idle": load_anim("betard_idle.gif"),
             "walk": load_anim("betard_walk.gif"),
+            "pain": load_anim("betard_pain.png"),
         }
         Static.images = {
             "box" : load_image("box.png"),
