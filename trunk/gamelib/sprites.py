@@ -191,8 +191,8 @@ class PlayerShot(Collidable):
         elif self.facing < 0:
             self.speed = -10
             self.rect[0] -= 140
+        self.layer = self.rect.bottom
         self.timer = 0
-
 
     def update(self):
         self.projection = Rect(self.rect[0], self.player.projection[1] + 10, self.rect[2], self.player.projection[3] - 10)
