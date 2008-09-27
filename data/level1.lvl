@@ -25,21 +25,24 @@ s2 = @sky,      2,   790, -100, 1
 
 [objects]
 #         object   x    y    z,  dir
-player  = player, 2000, 250,  0, right
+player  = player, 2600, 250,  0, left
 obj4    = ammo,   400, 350,  0,
 obj6    = ammo,   430, 350,  0,
 obj7    = ammo,   460, 350,  0,
 box1    = box,    370, 360,  0,
 box2    = box,    800, 400,  0,
 box3    = box_group, 200, 200,  0,
+box4    = box,    2750, 300,  0,
 barrel1 = barrel, 600, 350,  0,
 barrel2 = barrel, 620, 300,  1,
 
-#en = betard, 1800, 250, 0, right
+en = betard, 2200, 250, 0, left
 
 [triggers]
 #         type          x     y    w    h     obj     x    y    dir
-spawn1 = spawn_trigger, 2150, 300, 100, 175, betard, 1650, 250, right
-spawn2 = spawn_trigger, 2150, 300, 100, 175, betard, 1800, 310, right
-spawn3 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 250, left
-spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 300, left
+spawn1 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 250, right
+spawn2 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 310, right
+spawn3 = spawn_trigger, 2150, 300, 100, 175, betard, 2400, 250, left
+spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2400, 300, left
+
+spawn5 = spawn_trigger, 2900, 300, 100, 175, betard, 2750, 120, right
