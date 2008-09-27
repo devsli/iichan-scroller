@@ -147,7 +147,7 @@ class Player(Collidable):
 
     def shoot(self):
         if self.shoot_timer <= 0:
-            self.shoot_timer = 20
+            self.shoot_timer = 15
             if self.state in ["idle", "walk"]:
                 self.state = "stand_shoot"
             elif self.state in ["duck"]:
