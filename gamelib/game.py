@@ -14,7 +14,7 @@ def RelRect(actor, camera):
     return Rect(actor.rect.x-camera.rect.x, actor.rect.y-camera.rect.y, actor.rect.w, actor.rect.h)
 
 def RelProjection(actor, camera):
-    return Rect(actor.projection.x-camera.rect.x, actor.projection.y-camera.rect.y, actor.projection.w, actor.projection.h)
+    return Rect(actor.get_projection().x-camera.rect.x, actor.get_projection().y-camera.rect.y, actor.get_projection().w, actor.get_projection().h)
 
 class Camera(object):
     def __init__(self, player, width):
@@ -57,6 +57,7 @@ class Game(object):
         PlayerShot.groups = self.sprites, self.shots, self.notstatic
         Betard.groups = self.sprites, self.monsters, self.notstatic
         Static.groups = self.sprites, self.static
+        Balloon.groups = self.sprites
 
         # Load animation once
         self.heart = load_image("heart_bar.gif")
@@ -84,6 +85,7 @@ class Game(object):
             "box" : load_image("box.png"),
             "barrel" : load_image("barrel.png"),
         }
+        Balloon.image = load_image("balloon.png")
 
         self.score = 0
         self.lives = 3
@@ -98,15 +100,17 @@ class Game(object):
 
         self.player.collide(self.static)
 
+        for monster in self.monsters:
+            monster.collide(self.static)
 
         self.running = 1
         self.music = "because_she_said_no.ogg"
         play_music(self.music, 0.5)
-        
+
         # set layers for static sprites
         for sprite in self.sprites:
             self.sprites.change_layer(sprite, sprite.rect.bottom)
-        
+
         self.main_loop()
 
     def end(self):
@@ -170,8 +174,9 @@ class Game(object):
                                     self.player
                                 )
                             self.sprites.change_layer(shot, shot.layer)
-                            shot.collide(self.static)
                             self.player.shoot()
+                            shot.collide(self.static)
+                            shot.collide(self.monsters)
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
 
@@ -205,11 +210,11 @@ class Game(object):
                    self.screen.blit(bg.texture, (bg.x - self.camera.rect.x, bg.y))
 
             self.camera.draw_sprites(self.screen, self.sprites)
-            
+
             # changing layer for moving objects
             for sprite in self.notstatic:
-                new_layer = RelRect(sprite, self.camera).bottom
-                if new_layer != self.sprites.get_layer_of_sprite(sprite): 
+                new_layer = RelProjection(sprite, self.camera).bottom
+                if new_layer != self.sprites.get_layer_of_sprite(sprite):
                     self.sprites.change_layer(sprite, new_layer)
 
             # show bboxes for debugging and easy objects creating

@@ -51,12 +51,13 @@ class Collidable(pygame.sprite.Sprite):
     def __move(self,dx,dy):
         oldr = copy.copy(self.rect)
         self.rect.move_ip(dx, dy)
-        self.projection.move_ip(dx, dy)
+        proj = self.get_projection()
+        proj.move_ip(dx, dy)
         side = speed_to_side(dx, dy)
 
         for group in self.collision_groups:
             for spr in group:
-                if spr.rect.colliderect(self.rect) and spr.projection.colliderect(self.projection):
+                if spr.rect.colliderect(self.rect) and spr.get_projection().colliderect(proj):
                     self.on_collision(side, spr, group, dx, dy)
 
         return self.rect.left-oldr.left,self.rect.top-oldr.top
@@ -64,6 +65,21 @@ class Collidable(pygame.sprite.Sprite):
     def on_collision(self, side, sprite, group, dx, dy):
         #self.rect.move_ip(-dx, -dy)
         pass
+
+    def draw(self, surf):
+        surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
+
+    def hit(self):
+        pass
+
+    def get_projection(self):
+        return self.rect
+
+class Simple(pygame.sprite.Sprite):
+    def __init__(self, *groups):
+        pygame.sprite.Sprite.__init__(self, groups)
+        self.xoffset = 0
+        self.yoffset = 0
 
     def draw(self, surf):
         surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
@@ -143,7 +159,6 @@ class Player(Collidable):
         # Ammo control
         if self.ammo < 0: self.ammo = 0
         elif self.ammo > 100: self.ammo = 100
-        self.projection = Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
 
         # Looking left or right?
         if self.facing > 0:
@@ -163,7 +178,6 @@ class Player(Collidable):
         self.frame -= 1
         self.hit_timer -= 1
         self.shoot_timer -= 1
-        self.projection = Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
 
     def on_collision(self, side, sprite, group, dx, dy):
         self.rect.move_ip(-dx, -dy)
@@ -172,6 +186,9 @@ class Player(Collidable):
         pygame.sprite.Sprite.kill(self)
         PlayerDie(self.rect.center, self.facing)
 
+    def get_projection(self):
+        return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+
 class PlayerShot(Collidable):
 
     def __init__(self, pos, facing, img, player):
@@ -179,7 +196,7 @@ class PlayerShot(Collidable):
         self.facing = facing
         self.left_images = []
         self.right_images = img
-        self.player = copy.copy(player) # save copy of player for calculating right shot projection
+        self.player_proj = copy.copy(player.get_projection()) # save copy of player for calculating right shot projection
         for i in range(len(self.right_images)):
             self.left_images.append(pygame.transform.flip(self.right_images[i], 1, 0))
         self.image = self.right_images[1]
@@ -191,11 +208,10 @@ class PlayerShot(Collidable):
         elif self.facing < 0:
             self.speed = -10
             self.rect[0] -= 140
-        self.layer = self.rect.bottom
+        self.layer = self.get_projection().bottom
         self.timer = 0
 
     def update(self):
-        self.projection = Rect(self.rect[0], self.player.projection[1] + 10, self.rect[2], self.player.projection[3] - 10)
         if self.timer < 6:
             frame = 1
         else: frame = 0
@@ -210,7 +226,11 @@ class PlayerShot(Collidable):
         pygame.sprite.Sprite.kill(self)
 
     def on_collision(self, side, sprite, group, dx, dy):
+        sprite.hit()
         self.kill()
+
+    def get_projection(self):
+        return Rect(self.rect[0], self.player_proj[1] + 10, self.rect[2], self.player_proj[3] - 10)
 
 class PowerUp(Collidable):
     def __init__(self, pos, type):
@@ -219,18 +239,19 @@ class PowerUp(Collidable):
         self.images = self.gifs[type]
         self.image = self.images[0]
         self.rect = self.image.get_rect(topleft = pos)
-        self.projection = self.rect
         self.frame = 0
     def update(self):
         self.frame += 1
         self.image = self.images[self.frame/5 % len(self.images)]
+
+    def get_projection(self):
+        return self.rect
 
 class PowerUpDie(Collidable):
     def __init__(self, pos):
         Collidable.__init__(self, self.groups)
         self.image = self.images[0]
         self.rect = self.image.get_rect(center = pos)
-        self.projection = self.rect
         self.timer = 0
 
     def update(self):
@@ -239,6 +260,24 @@ class PowerUpDie(Collidable):
             self.image = self.images[self.timer/5 % len(self.images)]
         else:
             self.kill()
+
+    def get_projection(self):
+        return self.rect
+
+class Balloon(Simple):
+    def __init__(self, pos):
+        Simple.__init__(self, self.groups)
+        self.rect = self.image.get_rect(center = pos)
+        self.timer = 0
+
+    def update(self):
+        self.timer += 1
+        if self.timer < 30:
+            return
+        self.kill()
+
+    def get_projection(self):
+        return self.rect
 
 class Betard(Collidable):
     def __init__(self, pos, type = 1):
@@ -253,7 +292,6 @@ class Betard(Collidable):
         self.image = self.left_images[0]
         self.images = None
         self.rect = self.image.get_rect(topleft = pos)
-        self.projection = self.rect
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -295,6 +333,15 @@ class Betard(Collidable):
         self.timer += 1
         self.move(self.xspeed, self.yspeed)
 
+    def on_collision(self, side, sprite, group, dx, dy):
+        self.rect.move_ip(-dx*2, -dy*2)
+
+    def hit(self):
+        Balloon((self.rect.x, self.rect.y), )
+
+    def get_projection(self):
+        return self.rect
+
 class Static(Collidable):
     def __init__(self, pos, type):
         Collidable.__init__(self, self.groups)
@@ -302,11 +349,9 @@ class Static(Collidable):
         self.image = self.images[type]
         #self.image = self.images[0]
         self.rect = self.image.get_rect(topleft = pos)
-        if type == 'box':
-            self.projection = Rect(self.rect[0], self.rect[1] + 30, self.rect[2], self.rect[3] - 30)
-        elif type == 'barrel':
-            self.projection = Rect(self.rect[0], self.rect[1] + 100, self.rect[2], self.rect[3] - 100)
-        #self.frame = 0
-    #def update(self):
-    #    self.frame += 1
-    #    self.image = self.images[self.frame/5 % len(self.images)]
+
+    def get_projection(self):
+        if self.type == 'box':
+            return Rect(self.rect[0], self.rect[1] + 30, self.rect[2], self.rect[3] - 30)
+        elif self.type == 'barrel':
+            return Rect(self.rect[0], self.rect[1] + 100, self.rect[2], self.rect[3] - 100)
