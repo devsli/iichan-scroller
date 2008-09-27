@@ -25,8 +25,20 @@ def speed_to_side(dx,dy):
     else:
         return 0, 0
 
-class Particle(pygame.sprite.Sprite):
-    
+class Simple(pygame.sprite.Sprite):
+    def __init__(self, *groups):
+        pygame.sprite.Sprite.__init__(self, groups)
+        self.xoffset = 0
+        self.yoffset = 0
+
+    def draw(self, surf, rect):
+        surf.blit(self.image, rect)
+
+    def get_projection(self):
+        return self.rect
+
+class Particle(Simple):
+
     def __init__(self, pos, vx, vy, ax, ay, size, colorstructure, projected = False):
         pygame.sprite.Sprite.__init__(self, self.groups)
         self.vx, self.vy, self.ax, self.ay = vx, vy, ax, ay
@@ -43,7 +55,7 @@ class Particle(pygame.sprite.Sprite):
                 self.images.append(image)
         self.image = self.images[0]
         self.rect = self.image.get_rect(center = pos)
-        
+
     def update(self):
         self.rect.move_ip(self.vx, self.vy)
         self.vx = self.vx + self.ax
@@ -52,7 +64,7 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
         else:
             self.image = self.images.pop(0)
-            
+
     def get_projection(self):
         return self.rect
 
@@ -97,8 +109,9 @@ class Collidable(pygame.sprite.Sprite):
         #self.rect.move_ip(-dx, -dy)
         pass
 
-    def draw(self, surf):
-        surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
+    def draw(self, surf, rect):
+        surf.blit(self.image, rect)
+        #surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
 
     def hit(self):
         pass
@@ -106,26 +119,13 @@ class Collidable(pygame.sprite.Sprite):
     def get_projection(self):
         return self.rect
 
-class Simple(pygame.sprite.Sprite):
-    def __init__(self, *groups):
-        pygame.sprite.Sprite.__init__(self, groups)
-        self.xoffset = 0
-        self.yoffset = 0
-
-    #def draw(self, surf):
-        #surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
-    #    pass
-
-    def get_projection(self):
-        return self.rect
-
 class Player(Collidable):
-    def __init__(self, pos):
+    def __init__(self, pos, facing=1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
         self.image = self.right_images[0]
         self.rect = self.image.get_rect(topleft = pos)
-        self.facing = 1
+        self.facing = facing
         self.shoot_timer = 0
         self.hit_timer = 0
         self.hp = 5
@@ -184,7 +184,6 @@ class Player(Collidable):
 
         if self.shoot_timer <= 0:
             if key[K_LCTRL]:
-                pass
                 self.state = "duck"
             elif (dx == 0) and (dy == 0):
                 self.state = "idle"
@@ -234,7 +233,8 @@ class PlayerShot(Collidable):
         self.facing = facing
         self.left_images = []
         self.right_images = img
-        self.player_proj = copy.copy(player.get_projection()) # save copy of player for calculating right shot projection
+         # save copy of player's projection for calculating right shot projection
+        self.player_proj = copy.copy(player.get_projection())
         for i in range(len(self.right_images)):
             self.left_images.append(pygame.transform.flip(self.right_images[i], 1, 0))
         self.image = self.right_images[1]
@@ -265,7 +265,7 @@ class PlayerShot(Collidable):
             if self.facing < 0:
                 Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
                      [((58, 192, 253), (247, 254, 255), 5)])
-            else: 
+            else:
                 Particle(self.rect.midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
                      [((58, 192, 253), (247, 254, 255), 5)])
         pygame.sprite.Sprite.kill(self)
@@ -285,21 +285,104 @@ class PowerUp(Collidable):
         self.image = self.images[0]
         self.rect = self.image.get_rect(topleft = pos)
         self.frame = 0
+
     def update(self):
         self.frame += 1
         self.image = self.images[self.frame/5 % len(self.images)]
 
     def get_projection(self):
         return self.rect
-    
+
     def kill(self):
         for i in range(5):
             Particle(self.rect.center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 4,
                  [((255, 255, 255), (255, 255, 255), 10)])
         pygame.sprite.Sprite.kill(self)
 
-class Betard(Collidable):
-    def __init__(self, pos, type = 1):
+
+class DogAI():
+    visibility_range = 300
+    surrender_range = 500
+    attack_range = 0
+    player_path = []
+
+    def update(self):
+        if self.state == "idle":
+            # checking player visibility
+            if (abs(self.get_player_distance()) <= self.visibility_range and
+                self.is_looking_on_player()):
+                self.set_state("walk")
+        elif self.state == "walk":
+            # attack
+            if abs(self.get_player_distance()) <= self.attack_range:
+                pass
+            # surrender
+            elif abs(self.get_player_distance()) >= self.surrender_range:
+                self.set_state("idle")
+                self.player_path = []
+                if self.xspeed > 0:
+                    self.facing = 1
+                else:
+                    self.facing = -1
+                self.xspeed = 0
+                self.yspeed = 0
+                return
+            else:
+                # get next point from player's path
+                path_point = self.get_nearest_path_point()
+                xdist = abs(self.rect.centerx - path_point[0])
+                ydist = abs(self.rect.centery - path_point[1])
+
+                # goto point
+                if self.rect.centerx < path_point[0]:
+                    self.xspeed = +self.speed
+                elif self.rect.centerx > path_point[0]:
+                    self.xspeed = -self.speed
+                else:
+                    xspeed = 0
+
+                if self.rect.centery < path_point[1]:
+                    self.yspeed = +self.speed
+                elif self.rect.centery > path_point[1]:
+                    self.yspeed = -self.speed
+                else:
+                    yspeed = 0
+
+                # if we in place - remove this point from path
+                if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
+                    self.player_path = self.player_path[1:]
+
+                # checking if player trying run around mob
+                if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
+                    self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
+                    self.player_path = []
+
+        # adding new path points
+        if self.state in ["walk"]:
+            path_point = (self.player.rect.centerx - self.player.rect.centerx % self.speed, self.player.rect.centery - self.player.rect.centery % self.speed)
+            if (len(self.player_path) > 0):
+                if (self.player_path[-1] != path_point):
+                    self.player_path.append(path_point)
+            else:
+                self.player_path.append(path_point)
+
+    def get_player_distance(self):
+        return self.rect.centerx - self.player.rect.centerx
+
+    def get_nearest_path_point(self):
+        return self.player_path[0]
+
+    def is_looking_on_player(self):
+        if (self.facing > 0 and self.get_player_distance() < 0 or
+            self.facing < 0 and self.get_player_distance() > 0):
+            return True
+        else:
+            return False
+
+
+class Betard(Collidable, DogAI):
+    speed = 3
+    def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
         self.timer = 0
@@ -311,6 +394,8 @@ class Betard(Collidable):
         self.image = self.left_images[0]
         self.images = None
         self.rect = self.image.get_rect(topleft = pos)
+        self.life = 2
+        self.facing = facing
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -320,32 +405,25 @@ class Betard(Collidable):
             self.right_images.append(pygame.transform.flip(self.left_images[i], 1, 0))
 
     def kill(self):
-        pass
+        pygame.sprite.Sprite.kill(self)
 
     def update(self):
+        if self.life <= 0:
+            self.kill()
+        DogAI.update(self)
 
-        if self.timer > 40:
-            self.decision = random.randrange(3)
-            self.timer = 0
+        if self.facing > 0:
+            self.image = self.right_images[self.timer/5 % len(self.right_images)]
+        if self.facing < 0:
+            self.image = self.left_images[self.timer/5 % len(self.left_images)]
 
-        if self.decision == 0:
-            if self.state != "idle": self.set_state("idle")
-            if self.xspeed > 0: self.images = self.right_images
-            else: self.images = self.left_images
-            self.xspeed = 0
-            self.yspeed = 0
-        elif self.decision == 1:
-            if self.state != "walk": self.set_state("walk")
-            self.images = self.right_images
-            self.xspeed = 3
-            self.yspeed = 0
-        elif self.decision == 2:
-            if self.state != "walk": self.set_state("walk")
-            self.images = self.left_images
-            self.xspeed = -3
-            self.yspeed = 0
+        # Switch between right and left animation
+        if self.xspeed > 0:
+            self.image = self.right_images[self.timer/9 % len(self.right_images)]
+        if self.xspeed < 0:
+            self.image = self.left_images[self.timer/9 % len(self.left_images)]
 
-        self.image = self.images[self.timer/9 % len(self.images)]
+        #self.image = self.images[self.timer/9 % len(self.images)]
         self.timer += 1
         self.move(self.xspeed, self.yspeed)
 
@@ -353,7 +431,9 @@ class Betard(Collidable):
         self.rect.move_ip(-dx*2, -dy*2)
 
     def hit(self):
-        Balloon((self.rect.x, self.rect.y), )
+        self.life -= 1
+        if self.life > 0:
+            Balloon(self.rect, "OUCH!!!")
 
     def get_projection(self):
         return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
@@ -363,7 +443,6 @@ class Static(Collidable):
         Collidable.__init__(self, self.groups)
         self.type = type
         self.image = self.images[type]
-        #self.image = self.images[0]
         self.rect = self.image.get_rect(topleft = pos)
 
     def get_projection(self):
@@ -375,18 +454,22 @@ class Static(Collidable):
             return Rect(self.rect[0], self.rect[1] + 170, self.rect[2], self.rect[3] - 170)
 
 class Balloon(Simple):
-    def __init__(self, pos):
+    def __init__(self, initiator_rect, text):
         Simple.__init__(self, self.groups)
-        self.rect = self.image.get_rect(center = pos)
+        self.initiator_rect = initiator_rect # for tracking initiator moving
+        self.text = text
+        self.rect = self.image.get_rect(center = (self.initiator_rect.centerx, self.initiator_rect.y-10))
         self.timer = 0
+        self.font = pygame.font.Font(filepath("font.ttf"), 14)
 
     def update(self):
+        self.rect = self.image.get_rect(center = (self.initiator_rect.centerx, self.initiator_rect.y-10))
         self.timer += 1
         if self.timer < 30:
             return
         self.kill()
 
-    def draw(self, surf):
-        surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
-        ren = self.font.render("OUCH!11", 1, (0, 0, 0))
-        self.screen.blit(ren, (1,1))
+    def draw(self, surf, rect):
+        surf.blit(self.image, rect)
+        ren = self.font.render(self.text, 1, (0, 0, 0))
+        surf.blit(ren, (rect.centerx-ren.get_width()/2, rect.centery-ren.get_height()/2 - 5))

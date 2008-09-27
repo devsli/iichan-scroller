@@ -36,7 +36,8 @@ class Camera(object):
     def draw_sprites(self, surf, sprites):
         for s in sprites:
             if s.rect.colliderect(self.rect):
-                surf.blit(s.image, RelRect(s, self))
+                s.draw(surf, RelRect(s, self))
+                #surf.blit(s.image, RelRect(s, self))
 
 class Game(object):
 
@@ -101,10 +102,13 @@ class Game(object):
         self.font = pygame.font.Font(filepath("font.ttf"), 16)
         self.debug_font = pygame.font.Font(filepath("font.ttf"), 10)
 
+        DogAI.player = self.player
+
         self.player.collide(self.static)
 
         for monster in self.monsters:
             monster.collide(self.static)
+            monster.collide(self.players)
 
         self.running = 1
         self.music = "because_she_said_no.ogg"

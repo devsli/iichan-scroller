@@ -64,6 +64,7 @@ class Level:
         if 'objects' in level.sections():
             for object in level.items('objects'):
                 obj, x, y, z, dir = object[1].split(',')
+                dir = -1 if dir.strip() == "left" else 1
                 obj = obj.strip()
                 x = int(x)
                 y = int(y)
@@ -71,9 +72,9 @@ class Level:
                 if obj in ['ammo', 'heart', 'logo']:
                     PowerUp((x, y), obj)
                 elif obj == 'betard':
-                    Betard((x, y))
+                    Betard((x, y), facing = dir)
                 elif obj == 'player':
-                    self.player = Player((x, y))
+                    self.player = Player((x, y), dir)
                 elif obj in ['box', 'barrel', 'box_group']:
                     Static((x, y), obj)
 
