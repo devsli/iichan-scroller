@@ -97,7 +97,7 @@ class Collidable(pygame.sprite.Sprite):
 
         for group in self.collision_groups:
             for spr in group:
-                if spr.rect.colliderect(self.rect) and spr.get_projection().colliderect(proj):
+                if spr.rect.colliderect(self.rect) and spr.get_projection().colliderect(proj) and spr != self:
                     self.on_collision(side, spr, group, dx, dy)
                     spr.on_collision(side, self, group, 0, 0)
 
@@ -405,6 +405,7 @@ class Betard(Collidable, DogAI):
 
         self.collide(self.game.static)
         self.collide(self.game.players)
+        self.collide(self.game.monsters)
 
     def set_state(self, state = "idle"):
         self.state = state
