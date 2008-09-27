@@ -83,6 +83,7 @@ class Game(object):
         }
         Static.images = {
             "box" : load_image("box.png"),
+            "box_group" : load_image("box_group.png"),
             "barrel" : load_image("barrel.png"),
         }
         Balloon.image = load_image("balloon.png")

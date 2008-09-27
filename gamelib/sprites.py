@@ -341,9 +341,11 @@ class Static(Collidable):
 
     def get_projection(self):
         if self.type == 'box':
-            return Rect(self.rect[0], self.rect[1] + 30, self.rect[2], self.rect[3] - 30)
+            return Rect(self.rect[0], self.rect[1] + 80, self.rect[2], self.rect[3] - 80)
         elif self.type == 'barrel':
             return Rect(self.rect[0], self.rect[1] + 100, self.rect[2], self.rect[3] - 100)
+        elif self.type == 'box_group':
+            return Rect(self.rect[0], self.rect[1] + 170, self.rect[2], self.rect[3] - 170)
 
 class Balloon(Simple):
     def __init__(self, pos):

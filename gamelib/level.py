@@ -74,7 +74,7 @@ class Level:
                     Betard((x, y))
                 elif obj == 'player':
                     self.player = Player((x, y))
-                elif obj in ['box', 'barrel']:
+                elif obj in ['box', 'barrel', 'box_group']:
                     Static((x, y), obj)
 
     def get_size(self):
