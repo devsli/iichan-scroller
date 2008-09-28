@@ -1,6 +1,6 @@
 [resources]
-fence1=back.png
-fence2=fence2.png
+fence1=fence_w_door.png
+fence2=fence.png
 sky=sky.png
 cloud=cloud.png
 trees1=tree.png
