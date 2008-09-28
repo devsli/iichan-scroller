@@ -56,7 +56,7 @@ class Game(object):
         self.triggers = pygame.sprite.LayeredUpdates()
         self.topmost = pygame.sprite.LayeredUpdates()
 
-        PowerUp.groups = self.sprites, self.powerups, self.static
+        PowerUp.groups = self.sprites, self.powerups, self.notstatic
         Player.groups = self.sprites, self.players, self.notstatic
         PlayerShot.groups = self.sprites, self.shots, self.notstatic
         Betard.groups = self.sprites, self.monsters, self.notstatic
@@ -196,7 +196,7 @@ class Game(object):
                         self.player.state = "duck"
 
             for powerup in self.powerups:
-                if self.player.rect.colliderect(powerup.rect):
+                if self.player.get_projection().colliderect(powerup.rect):
                     # Pickup animation
                     if powerup.type == "ammo" and self.player.hp < 100:
                         self.player.ammo += 25
@@ -242,8 +242,6 @@ class Game(object):
             if self.config.debug:
                 for sprite in self.sprites:
                     pygame.draw.rect(self.screen, (255, 0, 0),  RelRect(sprite, self.camera), 1)
-
-                for sprite in self.sprites:
                     pygame.draw.rect(self.screen, (0, 255, 0),  RelProjection(sprite, self.camera), 1)
                     ren = self.debug_font.render("%d" % self.sprites.get_layer_of_sprite(sprite), 1, (255, 255, 255))
                     self.screen.blit(ren, RelRect(sprite, self.camera))
