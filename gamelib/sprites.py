@@ -289,6 +289,58 @@ class PlayerShot(Collidable):
     def get_projection(self):
         return Rect(self.rect[0], self.player_proj[1] + 10, self.rect[2], self.player_proj[3] - 10)
 
+class Fireball(Collidable):
+
+    def __init__(self, pos, facing, img, initiator):
+        Collidable.__init__(self, self.groups)
+        self.facing = facing
+        self.left_images = []
+        self.right_images = img
+        self.initiator_proj = copy.copy(initiator.get_projection())
+        for i in range(len(self.right_images)):
+            self.left_images.append(pygame.transform.flip(self.right_images[i], 1, 0))
+        self.image = self.right_images[1]
+        self.rect = self.image.get_rect(center = pos)
+        if self.facing > 0:
+            self.speed = 10
+        elif self.facing < 0:
+            self.speed = -10
+        self.layer = self.get_projection().bottom
+        self.timer = 0
+
+        self.collide(self.game.static)
+        self.collide(self.game.players)
+
+    def update(self):
+        if self.timer > 6:
+            frame = len(self.right_images) - 1
+        else:
+            frame = self.timer/3
+        if self.facing > 0: self.image = self.right_images[frame]
+        elif self.facing < 0: self.image = self.left_images[frame]
+        if self.timer > 50:
+            self.kill()
+        self.timer += 1
+        self.move(self.speed, 0)
+
+    def kill(self):
+        for i in range(15):
+            if self.facing < 0:
+                Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
+                     [((255, 247, 155), (252, 122, 45), 5)])
+            else:
+                Particle(self.rect.midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
+                     [((255, 247, 155), (252, 122, 45), 5)])
+        pygame.sprite.Sprite.kill(self)
+
+    def on_collision(self, side, sprite, group, dx, dy):
+        sprite.hit()
+        self.kill()
+
+    def get_projection(self):
+        return Rect(self.rect[0], self.initiator_proj[1] + 10, self.rect[2], self.initiator_proj[3] - 10)
+
+
 class PowerUp(Collidable):
     types = ["ammo", "heart", "logo"]
     def __init__(self, pos, type):
@@ -350,9 +402,9 @@ class DogAI():
 
                     if abs(self.get_player_distance()) <= 100:
                         if self.xspeed > 0:
-                            path_point[0] = self.player.rect.centerx - 90
+                            path_point[0] = self.player.rect.centerx - 100
                         elif self.xspeed < 0:
-                            path_point[0] = self.player.rect.centerx + 90
+                            path_point[0] = self.player.rect.centerx + 100
                         path_point[1] = self.player.rect.centery
 
                     xdist = self.rect.centerx - path_point[0]
@@ -472,6 +524,12 @@ class Betard(Collidable, DogAI):
                 self.timer = random.randrange(30)
                 self.attack_pause = 60
             self.attack_timer -= 1
+            if self.attack_timer == 20:
+                if self.facing > 0:
+                    Fireball((self.rect.right - 35, self.rect.top + 45), self.facing, self.gifs["fireball"], self)
+                if self.facing < 0:
+                    Fireball((self.rect.left + 35, self.rect.top + 45), self.facing, self.gifs["fireball"], self)
+
         else:
             if self.in_attack_point:
                 if self.attack_pause == 0:
@@ -480,10 +538,8 @@ class Betard(Collidable, DogAI):
                     self.set_state("attack")
                     self.attack_timer = 80
                     self.timer = 0
-                    return
                 else:
                     self.attack_pause -= 1
-
         if self.state == "pain":
             if self.pain_timer == 0:
                 self.set_state("walk")
