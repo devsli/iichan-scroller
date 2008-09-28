@@ -99,6 +99,7 @@ class Game(object):
             "box_group" : load_image("box_group.png"),
             "barrel" : load_image("barrel.png"),
             "tire" : load_image("tire.png"),
+            "trashcan" : load_image("trashcan.png"),
         }
         Balloon.image = load_image("balloon.png")
         DialogBar.image = load_image("dialog_bar.png")
