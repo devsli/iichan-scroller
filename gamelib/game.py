@@ -238,7 +238,7 @@ class Game(object):
 
 
             # show bboxes for debugging and easy objects creating
-            if self.config.show_bboxes:
+            if self.config.debug:
                 for sprite in self.sprites:
                     pygame.draw.rect(self.screen, (255, 0, 0),  RelRect(sprite, self.camera), 1)
 
@@ -249,6 +249,10 @@ class Game(object):
 
                 for trigger in self.triggers:
                     pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger, self.camera), 1)
+                    
+                for betard in self.monsters:
+                    ren = self.debug_font.render("Speed: %d %d" % (betard.xspeed, betard.yspeed), 1, (255, 255, 255))
+                    self.screen.blit(ren, (RelRect(betard, self.camera)[0], RelRect(betard, self.camera)[1]+16))
 
             if not self.dialog_mode:
                 self.draw_stats()
@@ -280,8 +284,10 @@ class Game(object):
         if self.player.ammo == 0:
             ren = self.font.render("Out of ammo!", 1, (255, 255, 255))
             self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 80))
-        ren = self.font.render("FPS: %d" % self.clock.get_fps(), 1, (255, 255, 255))
-        self.screen.blit(ren, (22, 80))
+        # FPS
+        if self.config.debug:
+            ren = self.font.render("FPS: %d" % self.clock.get_fps(), 1, (255, 255, 255))
+            self.screen.blit(ren, (22, 80))
 
     def start_dialog(self, dialog):
         self.dialog = dialog
