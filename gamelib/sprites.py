@@ -481,6 +481,8 @@ class Static(Collidable):
             return Rect(self.rect[0], self.rect[1] + 170, self.rect[2], self.rect[3] - 170)
         elif self.type == 'tire':
             return Rect(self.rect[0], self.rect[1] + 20, self.rect[2], self.rect[3] - 30)
+        elif self.type == 'trashcan':
+            return Rect(self.rect[0], self.rect[1] + 70, self.rect[2], self.rect[3] - 70)
 
     def on_collision(self, side, sprite, group, dx, dy):
         sprite.rect.move_ip(-dx, -dy)
