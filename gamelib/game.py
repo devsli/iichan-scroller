@@ -40,6 +40,7 @@ class Camera(object):
                 #surf.blit(s.image, RelRect(s, self))
 
 class Game(object):
+    dialog_mode = False
 
     def __init__(self, screen, config, continuing=False):
 
@@ -63,8 +64,11 @@ class Game(object):
         Balloon.groups = self.sprites
         Particle.groups = self.sprites, self.particles
         SpawnTrigger.groups = self.triggers
+        DialogTrigger.groups = self.triggers
+        DialogBar.groups = self.sprites
 
         Collidable.game = self
+        Simple.game = self
 
         # Load animation once
         self.heart = load_image("heart_bar.gif")
@@ -96,6 +100,8 @@ class Game(object):
             "tire" : load_image("tire.png"),
         }
         Balloon.image = load_image("balloon.png")
+        DialogBar.image = load_image("dialog_bar.png")
+
 
         self.score = 0
         self.lives = 3
@@ -164,30 +170,32 @@ class Game(object):
                     if event.key == K_ESCAPE:
                         sys.exit()
                     elif event.key == K_SPACE:
-                        if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
-                            if self.player.state in ["duck", "walk"]:
-                                shot = PlayerShot(
-                                    self.player.rect.center,
-                                    self.player.facing,
-                                    self.player.gifs["blast"],
-                                    self.player
-                                )
-                            else:
-                                shot = PlayerShot(
-                                    (self.player.rect.center[0], self.player.rect.center[1]-25),
-                                    self.player.facing,
-                                    self.player.gifs["blast"],
-                                    self.player
-                                )
-                            self.sprites.change_layer(shot, shot.layer)
-                            self.player.shoot()
+                        if not self.dialog_mode:
+                            if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
+                                if self.player.state in ["duck", "walk"]:
+                                    shot = PlayerShot(
+                                        self.player.rect.center,
+                                        self.player.facing,
+                                        self.player.gifs["blast"],
+                                        self.player
+                                    )
+                                else:
+                                    shot = PlayerShot(
+                                        (self.player.rect.center[0], self.player.rect.center[1]-25),
+                                        self.player.facing,
+                                        self.player.gifs["blast"],
+                                        self.player
+                                    )
+                                self.sprites.change_layer(shot, shot.layer)
+                                self.player.shoot()
+                        else:
+                            self.dialog.continue_dialog()
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
 
             for powerup in self.powerups:
                 if self.player.rect.colliderect(powerup.rect):
                     # Pickup animation
-                    #PowerUpDie(powerup.rect.center)
                     if powerup.type == "ammo" and self.player.hp < 100:
                         self.player.ammo += 25
                         powerup.kill()
@@ -199,8 +207,11 @@ class Game(object):
                         powerup.kill()
 
             # Updating all sprites
-            for s in self.sprites:
-                s.update()
+            if not self.dialog_mode:
+                for s in self.sprites:
+                    s.update()
+            else:
+                self.dialog.update()
 
             pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, 640, 480), 0)
             # draw 3 bg layers
@@ -237,7 +248,8 @@ class Game(object):
                 for trigger in self.triggers:
                     pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger, self.camera), 1)
 
-            self.draw_stats()
+            if not self.dialog_mode:
+                self.draw_stats()
 
             # To be or not to be?
             if not self.player.alive() and not self.playerdying:
@@ -268,3 +280,11 @@ class Game(object):
             self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 80))
         ren = self.font.render("FPS: %d" % self.clock.get_fps(), 1, (255, 255, 255))
         self.screen.blit(ren, (22, 80))
+
+    def start_dialog(self, dialog):
+        self.dialog = dialog
+        self.dialog_mode = True
+
+    def end_dialog(self):
+        self.dialog_mode = False
+        self.dialog = None

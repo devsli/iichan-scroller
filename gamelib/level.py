@@ -93,6 +93,14 @@ class Level:
                     spawny = int(spawny)
                     spawndir = dir = -1 if spawndir.strip() == "left" else 1
                     SpawnTrigger(Rect(x, y, w, h), spawnobj, spawnx, spawny, spawndir)
+                elif obj == 'dialog_trigger':
+                    obj, x, y, w, h, dialog = trigger[1].split(',')
+                    x = int(x)
+                    y = int(y)
+                    w = int(w)
+                    h = int(h)
+                    dialog = dialog.strip()
+                    DialogTrigger(Rect(x, y, w, h), dialog)
 
 
     def get_size(self):

@@ -37,6 +37,9 @@ class Simple(pygame.sprite.Sprite):
     def get_projection(self):
         return self.rect
 
+    def kill(self):
+        pygame.sprite.Sprite.kill(self)
+
 class Particle(Simple):
 
     def __init__(self, pos, vx, vy, ax, ay, size, colorstructure, projected = False):
@@ -55,7 +58,6 @@ class Particle(Simple):
                 self.images.append(image)
         self.image = self.images[0]
         self.rect = self.image.get_rect(center = pos)
-
     def update(self):
         self.rect.move_ip(self.vx, self.vy)
         self.vx = self.vx + self.ax
@@ -516,5 +518,44 @@ class SpawnTrigger(Collidable):
             Betard((self.spawnx, self.spawny), facing = self.spawndir)
         self.kill()
 
+class DialogTrigger(Collidable):
+    def __init__(self, rect, dialog):
+        Collidable.__init__(self, self.groups)
+        self.rect = rect
+        self.dialog = dialog
 
+    def draw(self, surf, rect):
+        pass
 
+    def on_collision(self, side, sprite, group, dx, dy):
+        self.game.start_dialog(DialogBar(self.dialog))
+        self.kill()
+
+# TODO: add loading dialogs and portraits from files
+class DialogBar(Simple):
+    def __init__(self, dialog):
+        Simple.__init__(self, self.groups)
+        self.dialog = dialog
+        self.rect = self.image.get_rect(topleft = (0, 0))
+        self.font = pygame.font.Font(filepath("font.ttf"), 14)
+        self.part = 0
+        self.text = (
+                     "Player: blah-blah-blah-blah!",
+                     "Badguy: blah-blah-blah-blah!!!",
+                     "Player: blah-blah-blah-blah!!!"
+                     )
+
+    def continue_dialog(self):
+        if self.part + 1 >= len(self.text):
+            self.kill()
+            self.game.end_dialog()
+        else:
+            self.part += 1
+
+    def update(self):
+        pass
+
+    def draw(self, surf, rect):
+        surf.blit(self.image, self.rect)
+        ren = self.font.render(self.text[self.part], 1, (255, 255, 255))
+        surf.blit(ren, (self.rect.centerx-ren.get_width()/2, self.rect.centery-ren.get_height()/2))
