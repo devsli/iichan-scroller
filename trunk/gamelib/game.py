@@ -66,6 +66,7 @@ class Game(object):
         SpawnTrigger.groups = self.triggers
         DialogTrigger.groups = self.triggers
         DialogBar.groups = self.sprites
+        Fireball.groups = self.sprites, self.shots, self.notstatic
 
         Collidable.game = self
         Simple.game = self
@@ -93,6 +94,7 @@ class Game(object):
             "walk": load_anim("betard_walk.gif"),
             "pain": load_anim("betard_pain.png"),
             "attack": load_anim("betard_attack.gif"),
+            "fireball": load_anim("fireball.gif"),
         }
         Static.images = {
             "box" : load_image("box.png"),
