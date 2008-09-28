@@ -380,39 +380,6 @@ class DogAI():
                         if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
                             self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
                             self.player_path = []
-                    
-                    # stop    
-                    #if self.rect.centerx == path_point[0]: self.xspeed = 0
-                    #if self.rect.centery == path_point[1]: self.yspeed = 0
-                    
-                    # if we in place - remove point from path
-                    #if xdist >= 0 and xdist <= self.xspeed and ydist >= 0 and ydist <= self.yspeed:
-                        #self.player_path = self.player_path[1:]
-                    
-                    # goto point
-                    #if self.rect.centerx < path_point[0]:
-                        #self.xspeed = +self.speed
-                    #elif self.rect.centerx > path_point[0]:
-                        #self.xspeed = -self.speed
-                    #else:
-                        #xspeed = 0
-
-                    #if self.rect.centery < path_point[1]:
-                        #self.yspeed = +self.speed
-                    #elif self.rect.centery > path_point[1]:
-                        #self.yspeed = -self.speed
-                    #else:
-                        #yspeed = 0
-
-                    # if we in place - remove this point from path
-                    #if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
-                        #self.player_path = self.player_path[1:]
-
-                    # checking if player trying run around mob
-                    #if len(self.player_path) > 0:
-                        #if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
-                            #self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
-                            #self.player_path = []
 
         # adding new path points
         if self.state in ["walk"] and self.ai_timer % 5 == 0:
