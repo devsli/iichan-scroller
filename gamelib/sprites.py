@@ -276,10 +276,10 @@ class PlayerShot(Collidable):
         for i in range(15):
             if self.facing < 0:
                 Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
-                     [((58, 192, 253), (247, 254, 255), 5)])
+                     [((58, 192, 253), (247, 254, 255), 7)])
             else:
                 Particle(self.rect.midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
-                     [((58, 192, 253), (247, 254, 255), 5)])
+                     [((58, 192, 253), (247, 254, 255), 7)])
         pygame.sprite.Sprite.kill(self)
 
     def on_collision(self, side, sprite, group, dx, dy):
@@ -290,12 +290,15 @@ class PlayerShot(Collidable):
         return Rect(self.rect[0], self.player_proj[1] + 10, self.rect[2], self.player_proj[3] - 10)
 
 class PowerUp(Collidable):
+    types = ["ammo", "heart", "logo"]
     def __init__(self, pos, type):
         Collidable.__init__(self, self.groups)
-        self.type = type
-        self.images = self.gifs[type]
+        if type in self.types:
+            self.type = type
+            self.images = self.gifs[self.type]
+        else: raise SystemExit, "ERROR: Can't load powerup type: '%s'" % type
         self.image = self.images[0]
-        self.rect = self.image.get_rect(topleft = pos)
+        self.rect = self.image.get_rect(center = pos)
         self.frame = 0
 
     def update(self):
@@ -306,8 +309,8 @@ class PowerUp(Collidable):
         return self.rect
 
     def kill(self):
-        for i in range(5):
-            Particle(self.rect.center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 4,
+        for i in range(10):
+            Particle(self.rect.center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 3,
                  [((255, 255, 255), (255, 255, 255), 10)])
         pygame.sprite.Sprite.kill(self)
 
@@ -342,7 +345,7 @@ class DogAI():
                 if len(self.player_path) > 0:
                     # keep only last 30 path points
                     if len(self.player_path) > 30:
-                        self.player_path = self.player_path[-20:]
+                        self.player_path = self.player_path[-30:]
                     path_point = self.player_path[0]
 
                     if abs(self.get_player_distance()) <= 100:
@@ -446,6 +449,9 @@ class Betard(Collidable, DogAI):
             self.right_images.append(pygame.transform.flip(self.left_images[i], 1, 0))
 
     def kill(self):
+        if random.randrange(5) % 2 == 0:
+            type = random.randrange(len(PowerUp.types))
+            PowerUp(self.get_projection().center, PowerUp.types[type])
         pygame.sprite.Sprite.kill(self)
 
     def update(self):
@@ -600,7 +606,7 @@ class DialogBar(Simple):
                 self.face1 = load_image(dialog_file.get(dialog, "face1").strip())
                 self.face2 = load_image(dialog_file.get(dialog, "face2").strip())
             except:
-                raise SystemExit, "Can't load faces for dialog '%s'" % dialog
+                raise SystemExit, "ERROR: Can't load faces for dialog '%s'" % dialog
 
             try:
                 string_n = 1
@@ -612,7 +618,7 @@ class DialogBar(Simple):
                 if string_n == 1:
                     self.text.append("")
             except:
-                raise SystemExit, "Can't load strings for dialog '%s'" % dialog
+                raise SystemExit, "ERROR: Can't load strings for dialog '%s'" % dialog
 
         self.rect = self.image.get_rect(topleft = (0, 0))
         self.rect.centerx = self.game.screen.get_rect().centerx
