@@ -15,17 +15,19 @@ h1 = @house,   0,   800,  000,  0
 f2 = @fence1,  0,   1600, 000,  0
 h2 = @house2,   0,   2400,  000,  0
 
-b1 = @bushes,   1,   0,    100,  0
+b1 = @bushes,   1,   0,    100,  1
 b2 = @bushes,   1,   800,  100,  0
 b3 = @bushes,   1,   1600, 100,  0
 b4 = @bushes,   1,   2400, 100,  0
+
+b5 = @bushes,   1,   -100,  170,  0
 
 s1 = @sky,      2,   0,   -100, 1
 s2 = @sky,      2,   790, -100, 1
 
 [objects]
 #         object   x    y    z,  dir
-player  = player, 2000, 260,  0, left
+player  = player, 100, 260,  0, right
 b  = betard, 1800, 260,  0, right
 #obj4    = ammo,   400, 350,  0,
 #obj6    = ammo,   430, 350,  0,

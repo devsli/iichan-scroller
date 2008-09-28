@@ -197,6 +197,8 @@ class Game(object):
                             self.dialog.continue_dialog()
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
+                    if event.key == K_d:
+                        self.config.debug = not self.config.debug
 
             for powerup in self.powerups:
                 if self.player.get_projection().colliderect(powerup.rect):
