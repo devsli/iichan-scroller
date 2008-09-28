@@ -55,14 +55,15 @@ class Game(object):
         self.notstatic = pygame.sprite.LayeredUpdates()
         self.particles = pygame.sprite.LayeredUpdates()
         self.triggers = pygame.sprite.LayeredUpdates()
+        self.topmost = pygame.sprite.LayeredUpdates()
 
         PowerUp.groups = self.sprites, self.powerups, self.static
         Player.groups = self.sprites, self.players, self.notstatic
         PlayerShot.groups = self.sprites, self.shots, self.notstatic
         Betard.groups = self.sprites, self.monsters, self.notstatic
         Static.groups = self.sprites, self.static
-        Balloon.groups = self.sprites
-        Particle.groups = self.sprites, self.particles
+        Balloon.groups = self.sprites, self.topmost
+        Particle.groups = self.sprites, self.particles, self.topmost
         SpawnTrigger.groups = self.triggers
         DialogTrigger.groups = self.triggers
         DialogBar.groups = self.sprites
@@ -231,9 +232,10 @@ class Game(object):
                 if new_layer != self.sprites.get_layer_of_sprite(sprite):
                     self.sprites.change_layer(sprite, new_layer)
 
-            # move all particles to front layer
-            for particle in self.particles:
-                self.sprites.move_to_front(particle)
+            # move some sprites to front layer
+            for sprite in self.topmost:
+                self.sprites.move_to_front(sprite)
+
 
             # show bboxes for debugging and easy objects creating
             if self.config.show_bboxes:

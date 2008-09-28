@@ -58,6 +58,7 @@ class Particle(Simple):
                 self.images.append(image)
         self.image = self.images[0]
         self.rect = self.image.get_rect(center = pos)
+
     def update(self):
         self.rect.move_ip(self.vx, self.vy)
         self.vx = self.vx + self.ax
@@ -315,10 +316,10 @@ class DogAI():
 
     def update(self):
         if self.state == "idle":
-            # checking player visibility
-            if (abs(self.get_player_distance()) <= self.visibility_range and
-                self.is_looking_on_player()):
-                self.set_state("walk")
+            # checking player visibility and hear shot
+            if abs(self.get_player_distance()) <= self.visibility_range:
+                if self.is_looking_on_player() or self.player.shoot_timer > 0:
+                    self.set_state("walk")
         elif self.state == "walk":
             # attack
             if abs(self.get_player_distance()) <= self.attack_range:
@@ -335,7 +336,7 @@ class DogAI():
                 self.yspeed = 0
                 return
             else:
-                # get next point from player's path
+                # get next point from player's pathmove
                 if len(self.player_path) > 0:
                     path_point = self.get_nearest_path_point()
                     xdist = abs(self.rect.centerx - path_point[0])
@@ -388,7 +389,6 @@ class DogAI():
         else:
             return False
 
-
 class Betard(Collidable, DogAI):
     speed = 3
     def __init__(self, pos, type = 1, facing = 1):
@@ -423,6 +423,7 @@ class Betard(Collidable, DogAI):
     def update(self):
         if self.life <= 0:
             self.kill()
+
         DogAI.update(self)
 
         if self.facing > 0:
@@ -447,12 +448,16 @@ class Betard(Collidable, DogAI):
 
     def on_collision(self, side, sprite, group, dx, dy):
         self.rect.move_ip(-dx, -dy)
+        # start walking if player touching
+        if sprite in self.game.players:
+            self.set_state("walk")
 
     def hit(self):
         self.life -= 1
         if self.life > 0:
             Balloon(self.rect, "OUCH!!!")
             self.set_state("pain")
+            self.facing = 1 if self.xspeed > 0 else -1
             self.xspeed = 0
             self.yspeed = 0
             self.pain_timer = 10

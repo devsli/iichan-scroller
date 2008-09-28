@@ -37,7 +37,7 @@ barrel1 = barrel, 600, 350,  0,
 barrel2 = barrel, 620, 300,  1,
 tire = tire, 2400, 400,  1,
 
-en = betard, 2200, 250, 0, left
+en = betard, 300, 260, 0, right
 
 [triggers]
 #         type          x     y    w    h     obj     x    y    dir
