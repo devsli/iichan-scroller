@@ -92,6 +92,7 @@ class Game(object):
             "idle": load_anim("betard_idle.gif"),
             "walk": load_anim("betard_walk.gif"),
             "pain": load_anim("betard_pain.png"),
+            "attack": load_anim("betard_attack.gif"),
         }
         Static.images = {
             "box" : load_image("box.png"),
@@ -249,7 +250,7 @@ class Game(object):
 
                 for trigger in self.triggers:
                     pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger, self.camera), 1)
-                    
+
                 for betard in self.monsters:
                     ren = self.debug_font.render("Speed: %d %d" % (betard.xspeed, betard.yspeed), 1, (255, 255, 255))
                     self.screen.blit(ren, (RelRect(betard, self.camera)[0], RelRect(betard, self.camera)[1]+16))

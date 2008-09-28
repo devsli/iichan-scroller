@@ -25,7 +25,8 @@ s2 = @sky,      2,   790, -100, 1
 
 [objects]
 #         object   x    y    z,  dir
-player  = player, 2000, 260,  0, right
+player  = player, 2000, 260,  0, left
+b  = betard, 1800, 260,  0, right
 #obj4    = ammo,   400, 350,  0,
 #obj6    = ammo,   430, 350,  0,
 #obj7    = ammo,   460, 350,  0,

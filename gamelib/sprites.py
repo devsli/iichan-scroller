@@ -314,11 +314,12 @@ class PowerUp(Collidable):
 
 class DogAI():
     visibility_range = 450
-    surrender_range = 600
-    attack_range = 0
+    surrender_range = 1000
+    attack_range = 100
     player_path = []
     ai_timer = 0
-    
+    in_attack_point = False
+
     def update(self):
         if self.state == "idle":
             # checking player visibility and hear shot
@@ -326,11 +327,7 @@ class DogAI():
                 if self.is_looking_on_player() or self.player.shoot_timer > 0:
                     self.set_state("walk")
         elif self.state == "walk":
-            # attack
-            if abs(self.get_player_distance()) <= self.attack_range:
-                pass
-            # surrender
-            elif abs(self.get_player_distance()) >= self.surrender_range:
+            if abs(self.get_player_distance()) >= self.surrender_range:
                 self.set_state("idle")
                 self.player_path = []
                 if self.xspeed > 0:
@@ -341,25 +338,38 @@ class DogAI():
                 self.yspeed = 0
                 return
             else:
-                # get next point from player's pathmove
+                # get next point from player's path
                 if len(self.player_path) > 0:
                     # keep only last 30 path points
                     if len(self.player_path) > 30:
                         self.player_path = self.player_path[-20:]
                     path_point = self.player_path[0]
+
+                    if abs(self.get_player_distance()) <= 100:
+                        if self.xspeed > 0:
+                            path_point[0] = self.player.rect.centerx - 90
+                        elif self.xspeed < 0:
+                            path_point[0] = self.player.rect.centerx + 90
+                        path_point[1] = self.player.rect.centery
+
                     xdist = self.rect.centerx - path_point[0]
                     ydist = self.rect.centery - path_point[1]
-                    
+
+                    if ydist in range(-10, 10) and abs(xdist) < self.attack_range:
+                        self.in_attack_point = True
+                    else:
+                        self.in_attack_point = False
+
                     angle = math.atan2(ydist, xdist)
-                    self.angle = int(270 - (angle * 180) / math.pi)     
-                                   
+                    self.angle = int(270 - (angle * 180) / math.pi)
+
                     self.xspeed = abs(math.sin(math.radians(self.angle))*self.speed)
                     self.yspeed = abs(math.cos(math.radians(self.angle))*self.speed)
-                    
+
                     # if we in place - remove this point from path
                     if xdist >= 0 and xdist in range(-5, 5) and ydist >= 0 and ydist in range(-5, 5):
                         self.player_path = self.player_path[1:]
-                        
+
                     # manually check directions
                     if self.rect.centerx < path_point[0]:
                         self.xspeed = +self.xspeed
@@ -374,7 +384,7 @@ class DogAI():
                         self.yspeed = -self.yspeed
                     else:
                         yspeed = 0
-                        
+
                     # checking if player trying run around mob
                     if len(self.player_path) > 0:
                         if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
@@ -383,7 +393,7 @@ class DogAI():
 
         # adding new path points
         if self.state in ["walk"] and self.ai_timer % 5 == 0:
-            path_point = (self.player.rect.centerx - self.player.rect.centerx % self.speed, self.player.rect.centery - self.player.rect.centery % self.speed)
+            path_point = [self.player.rect.centerx - self.player.rect.centerx % self.speed, self.player.rect.centery - self.player.rect.centery % self.speed]
             if (len(self.player_path) > 0):
                 if (self.player_path[-1] != path_point):
                     self.player_path.append(path_point)
@@ -406,6 +416,7 @@ class DogAI():
 
 class Betard(Collidable, DogAI):
     speed = 3
+    attack_pause = 0
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
@@ -419,6 +430,7 @@ class Betard(Collidable, DogAI):
         self.images = None
         self.rect = self.image.get_rect(topleft = pos)
         self.life = 2
+
         self.facing = facing
         self.set_image()
 
@@ -448,6 +460,23 @@ class Betard(Collidable, DogAI):
             self.facing = -1
 
         self.set_image()
+        if self.state == "attack":
+            if self.attack_timer == 0:
+                self.set_state("walk")
+                self.timer = random.randrange(30)
+                self.attack_pause = 60
+            self.attack_timer -= 1
+        else:
+            if self.in_attack_point:
+                if self.attack_pause == 0:
+                    self.xspeed = 0
+                    self.yspeed = 0
+                    self.set_state("attack")
+                    self.attack_timer = 80
+                    self.timer = 0
+                    return
+                else:
+                    self.attack_pause -= 1
 
         if self.state == "pain":
             if self.pain_timer == 0:
@@ -461,11 +490,12 @@ class Betard(Collidable, DogAI):
         self.rect.move_ip(-dx, -dy)
         # start walking if player touching
         if sprite in self.game.players:
-            self.set_state("walk")
+            if self.state != "attack":
+                self.set_state("walk")
 
     def hit(self):
         self.life -= 1
-        if self.life > 0:
+        if self.life > 0 and self.state != "attack":
             if random.randrange(10) in range(4):
                 Balloon(self.rect, "OUCH!!!")
             self.set_state("pain")
