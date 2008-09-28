@@ -544,6 +544,7 @@ class DialogBar(Simple):
         Simple.__init__(self, self.groups)
         self.dialog = dialog
         self.rect = self.image.get_rect(topleft = (0, 0))
+        self.rect.centerx = self.game.screen.get_rect().centerx
         self.font = pygame.font.Font(filepath("font.ttf"), 14)
         self.part = 0
         self.text = (

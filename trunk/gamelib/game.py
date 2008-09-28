@@ -215,14 +215,14 @@ class Game(object):
             else:
                 self.dialog.update()
 
-            pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, 640, 480), 0)
+            pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, self.config.width, 480), 0)
             # draw 3 bg layers
             bglayer_speed = [1, 0.9, 0.2]
             for bglayer_num in range(2, -1, -1):
                 for bg in self.level.backgrounds_layers[bglayer_num]:
                     rect = RelRect(bg, self.camera)
                     rect.x = bg.x - self.camera.rect.x * bglayer_speed[bglayer_num]
-                    if rect.colliderect(Rect(0, 0, 640, 480)):
+                    if rect.colliderect(Rect(0, 0, self.config.width, 480)):
                         self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * bglayer_speed[bglayer_num], bg.y))
 
             self.camera.draw_sprites(self.screen, self.sprites)
