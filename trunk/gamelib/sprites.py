@@ -409,7 +409,7 @@ class Betard(Collidable, DogAI):
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
-        self.timer = random.randrange(5)
+        self.timer = random.randrange(30)
         self.xspeed = 0
         self.yspeed = 0
         self.decision = 0
