@@ -267,13 +267,13 @@ class PlayerShot(Collidable):
         else: frame = 0
         if self.facing > 0: self.image = self.right_images[frame]
         elif self.facing < 0: self.image = self.left_images[frame]
-        if self.timer > 40:
+        if self.timer > 50:
             self.kill()
         self.timer += 1
         self.move(self.speed, 0)
 
     def kill(self):
-        for i in range(10):
+        for i in range(15):
             if self.facing < 0:
                 Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
                      [((58, 192, 253), (247, 254, 255), 5)])
@@ -317,7 +317,8 @@ class DogAI():
     surrender_range = 600
     attack_range = 0
     player_path = []
-
+    ai_timer = 0
+    
     def update(self):
         if self.state == "idle":
             # checking player visibility and hear shot
@@ -342,43 +343,86 @@ class DogAI():
             else:
                 # get next point from player's pathmove
                 if len(self.player_path) > 0:
-                    path_point = self.get_nearest_path_point()
-                    xdist = abs(self.rect.centerx - path_point[0])
-                    ydist = abs(self.rect.centery - path_point[1])
-
-                    # goto point
+                    # keep only last 30 path points
+                    if len(self.player_path) > 30:
+                        self.player_path = self.player_path[-20:]
+                    path_point = self.player_path[0]
+                    xdist = self.rect.centerx - path_point[0]
+                    ydist = self.rect.centery - path_point[1]
+                    
+                    angle = math.atan2(ydist, xdist)
+                    self.angle = int(270 - (angle * 180) / math.pi)     
+                                   
+                    self.xspeed = abs(math.sin(math.radians(self.angle))*self.speed)
+                    self.yspeed = abs(math.cos(math.radians(self.angle))*self.speed)
+                    
+                    # if we in place - remove this point from path
+                    if xdist >= 0 and xdist in range(-5, 5) and ydist >= 0 and ydist in range(-5, 5):
+                        self.player_path = self.player_path[1:]
+                        
+                    # manually check directions
                     if self.rect.centerx < path_point[0]:
-                        self.xspeed = +self.speed
+                        self.xspeed = +self.xspeed
                     elif self.rect.centerx > path_point[0]:
-                        self.xspeed = -self.speed
+                        self.xspeed = -self.xspeed
                     else:
                         xspeed = 0
 
                     if self.rect.centery < path_point[1]:
-                        self.yspeed = +self.speed
+                        self.yspeed = +self.yspeed
                     elif self.rect.centery > path_point[1]:
-                        self.yspeed = -self.speed
+                        self.yspeed = -self.yspeed
                     else:
                         yspeed = 0
-
-                    # if we in place - remove this point from path
-                    if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
-                        self.player_path = self.player_path[1:]
-
+                        
                     # checking if player trying run around mob
                     if len(self.player_path) > 0:
                         if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
                             self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
                             self.player_path = []
+                    
+                    # stop    
+                    #if self.rect.centerx == path_point[0]: self.xspeed = 0
+                    #if self.rect.centery == path_point[1]: self.yspeed = 0
+                    
+                    # if we in place - remove point from path
+                    #if xdist >= 0 and xdist <= self.xspeed and ydist >= 0 and ydist <= self.yspeed:
+                        #self.player_path = self.player_path[1:]
+                    
+                    # goto point
+                    #if self.rect.centerx < path_point[0]:
+                        #self.xspeed = +self.speed
+                    #elif self.rect.centerx > path_point[0]:
+                        #self.xspeed = -self.speed
+                    #else:
+                        #xspeed = 0
+
+                    #if self.rect.centery < path_point[1]:
+                        #self.yspeed = +self.speed
+                    #elif self.rect.centery > path_point[1]:
+                        #self.yspeed = -self.speed
+                    #else:
+                        #yspeed = 0
+
+                    # if we in place - remove this point from path
+                    #if xdist >= 0 and xdist <= self.speed and ydist >= 0 and ydist <= self.speed:
+                        #self.player_path = self.player_path[1:]
+
+                    # checking if player trying run around mob
+                    #if len(self.player_path) > 0:
+                        #if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
+                            #self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
+                            #self.player_path = []
 
         # adding new path points
-        if self.state in ["walk"]:
+        if self.state in ["walk"] and self.ai_timer % 5 == 0:
             path_point = (self.player.rect.centerx - self.player.rect.centerx % self.speed, self.player.rect.centery - self.player.rect.centery % self.speed)
             if (len(self.player_path) > 0):
                 if (self.player_path[-1] != path_point):
                     self.player_path.append(path_point)
             else:
                 self.player_path.append(path_point)
+        self.ai_timer += 1
 
     def get_player_distance(self):
         return self.rect.centerx - self.player.rect.centerx
@@ -398,7 +442,7 @@ class Betard(Collidable, DogAI):
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
-        self.timer = 0
+        self.timer = random.randrange(5)
         self.xspeed = 0
         self.yspeed = 0
         self.decision = 0
@@ -455,7 +499,8 @@ class Betard(Collidable, DogAI):
     def hit(self):
         self.life -= 1
         if self.life > 0:
-            Balloon(self.rect, "OUCH!!!")
+            if random.randrange(10) in range(4):
+                Balloon(self.rect, "OUCH!!!")
             self.set_state("pain")
             self.xspeed = 0
             self.yspeed = 0
