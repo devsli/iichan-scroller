@@ -2,6 +2,8 @@
 import pygame, random, math
 from pygame.locals import *
 
+import ConfigParser
+
 from data import *
 import copy
 TOP_SIDE    = 0
@@ -26,6 +28,7 @@ def speed_to_side(dx,dy):
         return 0, 0
 
 class Simple(pygame.sprite.Sprite):
+    draw_always = False
     def __init__(self, *groups):
         pygame.sprite.Sprite.__init__(self, groups)
         self.xoffset = 0
@@ -69,6 +72,7 @@ class Particle(Simple):
             self.image = self.images.pop(0)
 
 class Collidable(pygame.sprite.Sprite):
+    draw_always = False
 
     def __init__(self, *groups):
         pygame.sprite.Sprite.__init__(self, groups)
@@ -405,6 +409,7 @@ class Betard(Collidable, DogAI):
         self.rect = self.image.get_rect(topleft = pos)
         self.life = 2
         self.facing = facing
+        self.set_image()
 
         self.collide(self.game.static)
         self.collide(self.game.players)
@@ -426,22 +431,17 @@ class Betard(Collidable, DogAI):
 
         DogAI.update(self)
 
-        if self.facing > 0:
-            self.image = self.right_images[self.timer/5 % len(self.right_images)]
-        if self.facing < 0:
-            self.image = self.left_images[self.timer/5 % len(self.left_images)]
-
-        # Switch between right and left animation
         if self.xspeed > 0:
-            self.image = self.right_images[self.timer/9 % len(self.right_images)]
-        if self.xspeed < 0:
-            self.image = self.left_images[self.timer/9 % len(self.left_images)]
+            self.facing = 1
+        elif self.xspeed < 0:
+            self.facing = -1
+
+        self.set_image()
 
         if self.state == "pain":
             if self.pain_timer == 0:
                 self.set_state("walk")
             self.pain_timer -= 1
-
 
         self.timer += 1
         self.move(self.xspeed, self.yspeed)
@@ -457,13 +457,18 @@ class Betard(Collidable, DogAI):
         if self.life > 0:
             Balloon(self.rect, "OUCH!!!")
             self.set_state("pain")
-            self.facing = 1 if self.xspeed > 0 else -1
             self.xspeed = 0
             self.yspeed = 0
             self.pain_timer = 10
 
     def get_projection(self):
         return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+
+    def set_image(self):
+        if self.facing > 0:
+            self.image = self.right_images[self.timer/9 % len(self.right_images)]
+        elif self.facing < 0:
+            self.image = self.left_images[self.timer/9 % len(self.left_images)]
 
 class Static(Collidable):
     def __init__(self, pos, type):
@@ -538,20 +543,39 @@ class DialogTrigger(Collidable):
         self.game.start_dialog(DialogBar(self.dialog))
         self.kill()
 
-# TODO: add loading dialogs and portraits from files
 class DialogBar(Simple):
+    draw_always = True
+
     def __init__(self, dialog):
         Simple.__init__(self, self.groups)
         self.dialog = dialog
+
+        dialog_file = ConfigParser.ConfigParser()
+        dialog_file.read(filepath("dialogs"))
+        self.text = []
+        if dialog in dialog_file.sections():
+            try:
+                self.face1 = load_image(dialog_file.get(dialog, "face1").strip())
+                self.face2 = load_image(dialog_file.get(dialog, "face2").strip())
+            except:
+                raise SystemExit, "Can't load faces for dialog '%s'" % dialog
+
+            try:
+                string_n = 1
+                option = "string%s" % string_n
+                while dialog_file.has_option(dialog, option):
+                    self.text.append(dialog_file.get(dialog, option).strip())
+                    string_n += 1
+                    option = "string%s" % string_n
+                if string_n == 1:
+                    self.text.append("")
+            except:
+                raise SystemExit, "Can't load strings for dialog '%s'" % dialog
+
         self.rect = self.image.get_rect(topleft = (0, 0))
         self.rect.centerx = self.game.screen.get_rect().centerx
         self.font = pygame.font.Font(filepath("font.ttf"), 14)
         self.part = 0
-        self.text = (
-                     "Player: blah-blah-blah-blah!",
-                     "Badguy: blah-blah-blah-blah!!!",
-                     "Player: blah-blah-blah-blah!!!"
-                     )
 
     def continue_dialog(self):
         if self.part + 1 >= len(self.text):
@@ -565,5 +589,7 @@ class DialogBar(Simple):
 
     def draw(self, surf, rect):
         surf.blit(self.image, self.rect)
+        surf.blit(self.face1, (self.rect.x + 10, self.rect.y + 10))
+        surf.blit(self.face2, (self.rect.x + 566, self.rect.y + 10))
         ren = self.font.render(self.text[self.part], 1, (255, 255, 255))
         surf.blit(ren, (self.rect.centerx-ren.get_width()/2, self.rect.centery-ren.get_height()/2))

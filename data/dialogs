@@ -1,0 +1,10 @@
+[dialog1]
+face1=player_face.png
+face2=betard_face.png
+string1=Player: Who are you, motherfucker?!
+string2=Betard: Mmmmmmmmmmm...
+
+[dialog2]
+face1=player_face.png
+face2=betard_face.png
+string1=Player: Oh, shit!

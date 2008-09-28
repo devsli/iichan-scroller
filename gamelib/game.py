@@ -35,9 +35,8 @@ class Camera(object):
 
     def draw_sprites(self, surf, sprites):
         for s in sprites:
-            if s.rect.colliderect(self.rect):
+            if s.rect.colliderect(self.rect) or s.draw_always:
                 s.draw(surf, RelRect(s, self))
-                #surf.blit(s.image, RelRect(s, self))
 
 class Game(object):
     dialog_mode = False
