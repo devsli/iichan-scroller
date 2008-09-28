@@ -83,6 +83,7 @@ class Game(object):
             "duck_shoot": load_anim("loli_duck_shoot.gif"),
             "stand_shoot": load_anim("loli_stand_shoot.gif"),
             "blast": load_anim("blast.gif"),
+            "pain": load_anim("loli_hit.gif"),
         }
         PowerUp.gifs = {
             "heart": load_anim("heart.gif"),

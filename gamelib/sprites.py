@@ -166,36 +166,42 @@ class Player(Collidable):
         dy = 0
         key = pygame.key.get_pressed()
 
-        # Move
-        if self.hit_timer <= 0:
-            if key[K_LEFT]:
-                dx = -1
-                self.facing = dx
-                self.state = "walk"
-            elif key[K_RIGHT]:
-                dx = 1
-                self.facing = dx
-                self.state = "walk"
-            if key[K_DOWN]:
-                dy = 1
-                self.state = "walk"
-            elif key[K_UP]:
-                dy = -1
-                self.state = "walk"
+        if self.state != "pain":
+            # Move
+            if self.hit_timer <= 0:
+                if key[K_LEFT]:
+                    dx = -1
+                    self.facing = dx
+                    self.state = "walk"
+                elif key[K_RIGHT]:
+                    dx = 1
+                    self.facing = dx
+                    self.state = "walk"
+                if key[K_DOWN]:
+                    dy = 1
+                    self.state = "walk"
+                elif key[K_UP]:
+                    dy = -1
+                    self.state = "walk"
 
-        # Moving area
-        if self.rect.left < 10:
-            self.rect.left = 10
-        if self.rect.bottom > 460:
-            self.rect.bottom = 460
-        if self.rect.top < 200:
-            self.rect.top = 200
+            # Moving area
+            if self.rect.left < 10:
+                self.rect.left = 10
+            if self.rect.bottom > 460:
+                self.rect.bottom = 460
+            if self.rect.top < 200:
+                self.rect.top = 200
 
-        if self.shoot_timer <= 0:
-            if key[K_LCTRL]:
-                self.state = "duck"
-            elif (dx == 0) and (dy == 0):
-                self.state = "idle"
+            if self.shoot_timer <= 0:
+                if key[K_LCTRL]:
+                    self.state = "duck"
+                elif (dx == 0) and (dy == 0):
+                    self.state = "idle"
+        else:
+            if self.pain_timer > 0:
+                self.pain_timer -= 1
+            else:
+                self.set_state("idle")
 
         self.set_state(self.state)
 
@@ -234,6 +240,10 @@ class Player(Collidable):
             return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
         else:
             return Rect(self.rect[0] + 40, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+
+    def hit(self):
+        self.set_state("pain")
+        self.pain_timer = 15
 
 class PlayerShot(Collidable):
 
