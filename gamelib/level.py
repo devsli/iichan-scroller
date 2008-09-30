@@ -63,20 +63,20 @@ class Level:
 
         if 'objects' in level.sections():
             for object in level.items('objects'):
-                obj, x, y, z, dir = object[1].split(',')
+                obj, x, y, h, dir = object[1].split(',')
                 dir = -1 if dir.strip() == "left" else 1
                 obj = obj.strip()
                 x = int(x)
                 y = int(y)
-                z = int(z)
+                h = int(h)
                 if obj in ['ammo', 'heart', 'logo']:
-                    PowerUp((x, y), obj)
+                    PowerUp((x, y), obj, h)
                 elif obj == 'betard':
                     Betard((x, y), facing = dir)
                 elif obj == 'player':
-                    self.player = Player((x, y), dir)
+                    self.player = Player((x, y), dir, h)
                 elif obj in ['box', 'barrel', 'box_group', 'tire', 'trashcan']:
-                    Static((x, y), obj)
+                    Static((x, y), obj, h)
 
         if 'triggers' in level.sections():
             for trigger in level.items('triggers'):
@@ -89,8 +89,8 @@ class Level:
                     w = int(w)
                     h = int(h)
                     spawnobj = spawnobj.strip()
-                    spawnx = int(spawnx)
-                    spawny = int(spawny)
+                    spawnx   = int(spawnx)
+                    spawny   = int(spawny)
                     spawndir = dir = -1 if spawndir.strip() == "left" else 1
                     SpawnTrigger(Rect(x, y, w, h), spawnobj, spawnx, spawny, spawndir)
                 elif obj == 'dialog_trigger':
