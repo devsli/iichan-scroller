@@ -27,10 +27,38 @@ def speed_to_side(dx,dy):
     else:
         return 0, 0
 
-class Simple(pygame.sprite.Sprite):
+class SpriteHelper():
+    def __init__(self):
+        self.sprites_file = ConfigParser.ConfigParser()
+        self.sprites_file.read(filepath("base.spr"))
+
+    def load_rect(self, sprite_name, rect_name):
+        try:
+            x, y, w, h = self.sprites_file.get(sprite_name, rect_name).split(',')
+            return Rect(int(x), int(y), int(w), int(h))
+        except:
+            raise SystemExit, "ERROR: Can't load rect '%s.%s'" % (sprite_name, rect_name)
+
+    def get_fixed_rect(self, sprite_name, rect_name, base_rect, height = 0):
+        '''Getting rect aligned with base rect center and added height'''
+        rect = self.load_rect(sprite_name, rect_name)
+        rect.centerx = base_rect.centerx + rect.x
+        rect.centery = base_rect.centery + rect.y
+        rect.move_ip(0, -height)
+        return rect
+
+    def fix_sprite_rect(self, sprite_name, base_rect, image):
+        '''Getting sprite rect aligned with base rect center'''
+        x, y = self.sprites_file.get(sprite_name, 'sprite').split(',')
+        image_rect = image.get_rect(center = base_rect.center)
+        image_rect.move_ip(int(x), int(y))
+        return image_rect
+
+class Simple(pygame.sprite.Sprite, SpriteHelper):
     draw_always = False
     def __init__(self, *groups):
         pygame.sprite.Sprite.__init__(self, groups)
+        SpriteHelper.__init__(self)
         self.xoffset = 0
         self.yoffset = 0
 
@@ -38,10 +66,16 @@ class Simple(pygame.sprite.Sprite):
         surf.blit(self.image, rect)
 
     def get_projection(self):
-        return self.rect
+        return self.projection
 
     def kill(self):
         pygame.sprite.Sprite.kill(self)
+
+    def get_height_rect(self):
+        return self.get_projection()
+
+    def get_sprite_rect(self):
+        return self.get_height_rect()
 
 class Particle(Simple):
 
@@ -60,10 +94,10 @@ class Particle(Simple):
                 image.fill((f(startr, endr, t), f(startg, endg, t), f(startb, endb, t)))
                 self.images.append(image)
         self.image = self.images[0]
-        self.rect = self.image.get_rect(center = pos)
+        self.projection = self.image.get_rect(center = pos)
 
     def update(self):
-        self.rect.move_ip(self.vx, self.vy)
+        self.projection.move_ip(self.vx, self.vy)
         self.vx = self.vx + self.ax
         self.vy = self.vy + self.ay
         if not self.images:
@@ -71,11 +105,13 @@ class Particle(Simple):
         else:
             self.image = self.images.pop(0)
 
-class Collidable(pygame.sprite.Sprite):
+class Collidable(pygame.sprite.Sprite, SpriteHelper):
     draw_always = False
+    height = 0
 
     def __init__(self, *groups):
         pygame.sprite.Sprite.__init__(self, groups)
+        SpriteHelper.__init__(self)
         self.collision_groups = []
         self.xoffset = 0
         self.yoffset = 0
@@ -96,40 +132,70 @@ class Collidable(pygame.sprite.Sprite):
         return dx, dy
 
     def __move(self,dx,dy):
-        oldr = copy.copy(self.rect)
-        self.rect.move_ip(dx, dy)
+        oldr = copy.copy(self.get_projection())
+
         proj = self.get_projection()
         proj.move_ip(dx, dy)
         side = speed_to_side(dx, dy)
 
         for group in self.collision_groups:
             for spr in group:
-                if spr.rect.colliderect(self.rect) and spr.get_projection().colliderect(proj) and spr != self:
+                if spr.get_height_rect().colliderect(self.get_height_rect()) and spr.get_projection().colliderect(proj) and spr != self:
                     self.on_collision(side, spr, group, dx, dy)
-                    spr.on_collision(side, self, group, 0, 0)
+                    spr.on_collision(side, self, group, dx, dy)
 
-        return self.rect.left-oldr.left,self.rect.top-oldr.top
+        return self.get_projection().left - oldr.left, self.get_projection().top - oldr.top
+
+    def fall(self, dh):
+        return self.__fall(dh)
+
+    def __fall(self, dh):
+        oldr = copy.copy(self.get_height_rect())
+
+        height = self.get_height_rect()
+        height.move_ip(0, dh)
+        side = speed_to_side(0, dh)
+        self.height -= dh
+
+        for group in self.collision_groups:
+            for spr in group:
+                if spr.get_height_rect().colliderect(self.get_height_rect()) and spr.get_projection().colliderect(self.get_projection()) and spr != self:
+                    self.on_fall_collision(side, spr, group, dh)
+                    spr.on_fall_collision(side, self, group, dh)
+
+        return self.get_height_rect().top - oldr.top
 
     def on_collision(self, side, sprite, group, dx, dy):
         pass
 
+    def on_fall_collision(self, side, sprite, group, dy):
+        pass
 
     def draw(self, surf, rect):
         surf.blit(self.image, rect)
-        #surf.blit(self.image, (self.rect[0]+self.xoffset, self.rect[1]+self.yoffset))
 
     def hit(self):
         pass
 
     def get_projection(self):
-        return self.rect
+        return self.projection
+
+    def get_height_rect(self):
+        return self.get_projection()
+
+    def get_sprite_rect(self):
+        return self.get_height_rect()
 
 class Player(Collidable):
-    def __init__(self, pos, facing=1):
+    dfall = 0
+    can_jump = 1
+    standing_on = None
+    def __init__(self, pos, facing=1, height = 0):
         Collidable.__init__(self, self.groups)
+        self.projection = self.load_rect('player', 'projection')
+        self.projection.center = pos
         self.set_state("idle")
         self.image = self.right_images[0]
-        self.rect = self.image.get_rect(topleft = pos)
         self.facing = facing
         self.shoot_timer = 0
         self.hit_timer = 0
@@ -137,13 +203,17 @@ class Player(Collidable):
         self.ammo = 20
         self.score = 0
         self.frame = 0
+        self.state = "idle"
+        self.height = height
 
         self.collide(self.game.static)
         self.collide(self.game.monsters)
         self.collide(self.game.triggers)
+        self.collide(self.game.powerups)
 
     def set_state(self, state = "idle"):
         self.state = state
+
         self.left_images = []
         self.right_images = self.gifs[state]
         for i in range(len(self.right_images)):
@@ -178,19 +248,53 @@ class Player(Collidable):
                     self.facing = dx
                     self.state = "walk"
                 if key[K_DOWN]:
-                    dy = 1
-                    self.state = "walk"
+                    # don't allow moving in air
+                    if self.height == 0:
+                        dy = 1
+                        self.state = "walk"
+                    # but allow jump off from barrier
+                    elif self.standing_on != None and self.can_jump:
+                        self.can_jump = 0
+                        self.projection.top = self.standing_on.get_projection().bottom
+                        self.dfall = -10
+                        self.standing_on = None
                 elif key[K_UP]:
-                    dy = -1
-                    self.state = "walk"
+                    # don't allow moving in air
+                    if self.height == 0:
+                        dy = -1
+                        self.state = "walk"
+                    # but allow jump off from barrier
+                    elif self.standing_on != None and self.can_jump:
+                        self.can_jump = 0
+                        self.projection.bottom = self.standing_on.get_projection().top
+                        self.dfall = -10
+                        self.standing_on = None
+                elif key[K_LALT]:
+                    if self.can_jump:
+                        self.can_jump = 0
+                        self.dfall = -15
+
+            # jumping
+            if self.dfall < 0:
+                self.fall(self.dfall)
+                self.dfall += 1
+            # falling
+            elif self.height > 0:
+                self.fall(self.dfall)
+                self.dfall += 1
+                # landing
+                if self.height <= 0:
+                    self.height = 0
+                    self.dfall = 0
+                    self.can_jump = 1
 
             # Moving area
-            if self.rect.left < 10:
-                self.rect.left = 10
-            if self.rect.bottom > 460:
-                self.rect.bottom = 460
-            if self.rect.top < 200:
-                self.rect.top = 200
+            if self.get_projection().left < 10:
+                self.projection.left = 10
+            if self.get_projection().bottom > 460:
+                self.projection.bottom = 460
+            if self.get_projection().top < 310:
+                self.projection.top = 310
 
             if self.shoot_timer <= 0:
                 if key[K_LCTRL]:
@@ -228,26 +332,38 @@ class Player(Collidable):
         self.hit_timer -= 1
         self.shoot_timer -= 1
 
+        standing_on = None
+
     def on_collision(self, side, sprite, group, dx, dy):
-        self.rect.move_ip(-dx, -dy)
+        #self.projection.move_ip(-dx, -dy)
+        pass
 
     def kill(self):
         pygame.sprite.Sprite.kill(self)
         PlayerDie(self.rect.center, self.facing)
 
-    def get_projection(self):
-        if self.facing == 1:
-            return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
-        else:
-            return Rect(self.rect[0] + 40, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
+    def get_height_rect(self):
+        if self.state in ['walk', 'idle', 'pain', 'stand_shoot']:
+            rect = self.get_fixed_rect('player', 'height', self.projection, self.height)
+        elif self.state in ['duck', 'duck_shoot']:
+            rect = self.get_fixed_rect('player.duck', 'height', self.projection, self.height)
+        return rect
 
     def hit(self):
         self.set_state("pain")
         self.pain_timer = 15
 
-class PlayerShot(Collidable):
+    def get_sprite_rect(self):
+        if self.state in ['walk', 'idle', 'pain', 'stand_shoot']:
+            return self.fix_sprite_rect('player', self.get_height_rect(), self.image)
+        elif self.state in ['duck', 'duck_shoot']:
+            return self.fix_sprite_rect('player.duck', self.get_height_rect(), self.image)
 
-    def __init__(self, pos, facing, img, player):
+    def draw(self, surf, rect):
+        surf.blit(self.image, rect)
+
+class PlayerShot(Collidable):
+    def __init__(self, pos, facing, img, player, height):
         Collidable.__init__(self, self.groups)
         self.facing = facing
         self.left_images = []
@@ -257,14 +373,17 @@ class PlayerShot(Collidable):
         for i in range(len(self.right_images)):
             self.left_images.append(pygame.transform.flip(self.right_images[i], 1, 0))
         self.image = self.right_images[1]
-        self.rect = self.image.get_rect(topleft = pos)
-        self.rect[1] -= 12
+        #self.rect = self.image.get_rect(topleft = pos)
+        self.projection = self.load_rect('blast.left', 'projection')
+        self.projection.center = pos
+        self.height = height
+        #self.rect[1] -= 12
         if self.facing > 0:
             self.speed = 10
-            self.rect[0] += 60
+        #    self.[0] += 60
         elif self.facing < 0:
             self.speed = -10
-            self.rect[0] -= 140
+        #    self.rect[0] -= 140
         self.layer = self.get_projection().bottom
         self.timer = 0
 
@@ -285,10 +404,10 @@ class PlayerShot(Collidable):
     def kill(self):
         for i in range(15):
             if self.facing < 0:
-                Particle(self.rect.midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
+                Particle(self.get_height_rect().midleft, random.randrange(-5, 6), random.randrange(-10, 0), 1, 1, 3,
                      [((58, 192, 253), (247, 254, 255), 7)])
             else:
-                Particle(self.rect.midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
+                Particle(self.get_height_rect().midright, random.randrange(-5, 6), random.randrange(-10, 0), -1, 1, 3,
                      [((58, 192, 253), (247, 254, 255), 7)])
         pygame.sprite.Sprite.kill(self)
 
@@ -296,8 +415,16 @@ class PlayerShot(Collidable):
         sprite.hit()
         self.kill()
 
-    def get_projection(self):
-        return Rect(self.rect[0], self.player_proj[1] + 10, self.rect[2], self.player_proj[3] - 10)
+    def get_sprite_rect(self):
+        if self.facing > 0:
+            return self.fix_sprite_rect('blast.right', self.get_height_rect(), self.image)
+        else:
+            return self.fix_sprite_rect('blast.left', self.get_height_rect(), self.image)
+
+    def get_height_rect(self):
+        rect = copy.copy(self.projection)
+        rect.move_ip(0, -self.height)
+        return rect
 
 class Fireball(Collidable):
 
@@ -350,32 +477,49 @@ class Fireball(Collidable):
     def get_projection(self):
         return Rect(self.rect[0], self.initiator_proj[1] + 10, self.rect[2], self.initiator_proj[3] - 10)
 
-
 class PowerUp(Collidable):
     types = ["ammo", "heart", "logo"]
-    def __init__(self, pos, type):
+    def __init__(self, pos, type, height):
         Collidable.__init__(self, self.groups)
         if type in self.types:
             self.type = type
             self.images = self.gifs[self.type]
         else: raise SystemExit, "ERROR: Can't load powerup type: '%s'" % type
         self.image = self.images[0]
-        self.rect = self.image.get_rect(center = pos)
+        self.projection = self.load_rect('powerup', 'projection')
+        self.projection.center = pos
         self.frame = 0
+        self.height = height
 
     def update(self):
         self.frame += 1
         self.image = self.images[self.frame/5 % len(self.images)]
 
-    def get_projection(self):
-        return self.rect
-
     def kill(self):
         for i in range(10):
-            Particle(self.rect.center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 3,
+            Particle(self.get_height_rect().center, random.randrange(-3, 4), random.randrange(-10, 0), 0, 1, 3,
                  [((255, 255, 255), (255, 255, 255), 10)])
         pygame.sprite.Sprite.kill(self)
 
+    def get_height_rect(self):
+        return self.get_fixed_rect('powerup', 'height', self.projection, self.height)
+
+    def collect(self):
+        if self.type == "ammo" and self.game.player.hp < 100:
+            self.game.player.ammo += 25
+            self.kill()
+        elif self.type == "heart" and self.game.player.hp < 5:
+            self.game.player.hp += 1
+            self.kill()
+        elif self.type == "logo":
+            self.game.player.score += 25
+            self.kill()
+
+    def on_collision(self, side, sprite, group, dx, dy):
+        self.collect()
+
+    def on_fall_collision(self, side, sprite, group, dh):
+        self.collect()
 
 class DogAI():
     visibility_range = 450
@@ -412,13 +556,13 @@ class DogAI():
 
                     if abs(self.get_player_distance()) <= 100:
                         if self.xspeed > 0:
-                            path_point[0] = self.player.rect.centerx - 100
+                            path_point[0] = self.player.get_projection().centerx - 100
                         elif self.xspeed < 0:
-                            path_point[0] = self.player.rect.centerx + 100
-                        path_point[1] = self.player.rect.centery
+                            path_point[0] = self.player.get_projection().centerx + 100
+                        path_point[1] = self.player.get_projection().centery
 
-                    xdist = self.rect.centerx - path_point[0]
-                    ydist = self.rect.centery - path_point[1]
+                    xdist = self.get_projection().centerx - path_point[0]
+                    ydist = self.get_projection().centery - path_point[1]
 
                     if ydist in range(-10, 10) and abs(xdist) < self.attack_range:
                         self.in_attack_point = True
@@ -436,29 +580,29 @@ class DogAI():
                         self.player_path = self.player_path[1:]
 
                     # manually check directions
-                    if self.rect.centerx < path_point[0]:
+                    if self.get_projection().centerx < path_point[0]:
                         self.xspeed = +self.xspeed
-                    elif self.rect.centerx > path_point[0]:
+                    elif self.get_projection().centerx > path_point[0]:
                         self.xspeed = -self.xspeed
                     else:
                         xspeed = 0
 
-                    if self.rect.centery < path_point[1]:
+                    if self.get_projection().centery < path_point[1]:
                         self.yspeed = +self.yspeed
-                    elif self.rect.centery > path_point[1]:
+                    elif self.get_projection().centery > path_point[1]:
                         self.yspeed = -self.yspeed
                     else:
                         yspeed = 0
 
                     # checking if player trying run around mob
                     if len(self.player_path) > 0:
-                        if (self.rect.centerx < self.player_path[0][0] and self.player.rect.centerx < self.player_path[0][0] or
-                            self.rect.centerx > self.player_path[0][0] and self.player.rect.centerx > self.player_path[0][0]):
+                        if (self.get_projection().centerx < self.player_path[0][0] and self.player.get_projection().centerx < self.player_path[0][0] or
+                            self.get_projection().centerx > self.player_path[0][0] and self.player.get_projection().centerx > self.player_path[0][0]):
                             self.player_path = []
 
         # adding new path points
         if self.state in ["walk"] and self.ai_timer % 5 == 0:
-            path_point = [self.player.rect.centerx - self.player.rect.centerx % self.speed, self.player.rect.centery - self.player.rect.centery % self.speed]
+            path_point = [self.player.get_projection().centerx - self.player.get_projection().centerx % self.speed, self.player.get_projection().centery - self.player.get_projection().centery % self.speed]
             if (len(self.player_path) > 0):
                 if (self.player_path[-1] != path_point):
                     self.player_path.append(path_point)
@@ -467,7 +611,7 @@ class DogAI():
         self.ai_timer += 1
 
     def get_player_distance(self):
-        return self.rect.centerx - self.player.rect.centerx
+        return self.get_projection().centerx - self.player.get_projection().centerx
 
     def get_nearest_path_point(self):
         return self.player_path[0]
@@ -482,6 +626,7 @@ class DogAI():
 class Betard(Collidable, DogAI):
     speed = 3
     attack_pause = 0
+
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
         self.set_state("idle")
@@ -493,7 +638,8 @@ class Betard(Collidable, DogAI):
         self.set_state()
         self.image = self.left_images[0]
         self.images = None
-        self.rect = self.image.get_rect(topleft = pos)
+        self.projection = self.load_rect('betard', 'projection')
+        self.projection.center = pos
         self.life = 2
 
         self.facing = facing
@@ -502,6 +648,7 @@ class Betard(Collidable, DogAI):
         self.collide(self.game.static)
         self.collide(self.game.players)
         self.collide(self.game.monsters)
+
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -536,9 +683,9 @@ class Betard(Collidable, DogAI):
             self.attack_timer -= 1
             if self.attack_timer == 20:
                 if self.facing > 0:
-                    Fireball((self.rect.right - 35, self.rect.top + 45), self.facing, self.gifs["fireball"], self)
+                    Fireball((self.get_height_rect().right - 35, self.get_height_rect().top + 45), self.facing, self.gifs["fireball"], self)
                 if self.facing < 0:
-                    Fireball((self.rect.left + 35, self.rect.top + 45), self.facing, self.gifs["fireball"], self)
+                    Fireball((self.get_height_rect().left + 35, self.get_height_rect().top + 45), self.facing, self.gifs["fireball"], self)
 
         else:
             if self.in_attack_point:
@@ -559,7 +706,7 @@ class Betard(Collidable, DogAI):
         self.move(self.xspeed, self.yspeed)
 
     def on_collision(self, side, sprite, group, dx, dy):
-        self.rect.move_ip(-dx, -dy)
+        self.get_projection().move_ip(-dx, -dy)
         # start walking if player touching
         if sprite in self.game.players:
             if self.state != "attack":
@@ -575,36 +722,57 @@ class Betard(Collidable, DogAI):
             self.yspeed = 0
             self.pain_timer = 10
 
-    def get_projection(self):
-        return Rect(self.rect[0] + 30, self.rect[1] + 140, self.rect[2] - 70, self.rect[3] - 130)
-
     def set_image(self):
         if self.facing > 0:
             self.image = self.right_images[self.timer/9 % len(self.right_images)]
         elif self.facing < 0:
             self.image = self.left_images[self.timer/9 % len(self.left_images)]
 
+    def get_projection(self):
+        return self.projection
+
+    def get_height_rect(self):
+        rect = self.get_fixed_rect('betard', 'height', self.projection)
+        rect.move_ip(0, -self.height)
+        return rect
+
+    def get_sprite_rect(self):
+        return self.fix_sprite_rect('betard', self.get_height_rect(), self.image)
+
 class Static(Collidable):
-    def __init__(self, pos, type):
+    def __init__(self, pos, type, height=0):
         Collidable.__init__(self, self.groups)
         self.type = type
         self.image = self.images[type]
-        self.rect = self.image.get_rect(topleft = pos)
-
-    def get_projection(self):
-        if self.type == 'box':
-            return Rect(self.rect[0], self.rect[1] + 80, self.rect[2], self.rect[3] - 80)
-        elif self.type == 'barrel':
-            return Rect(self.rect[0], self.rect[1] + 100, self.rect[2], self.rect[3] - 100)
-        elif self.type == 'box_group':
-            return Rect(self.rect[0], self.rect[1] + 170, self.rect[2], self.rect[3] - 170)
-        elif self.type == 'tire':
-            return Rect(self.rect[0], self.rect[1] + 20, self.rect[2], self.rect[3] - 30)
-        elif self.type == 'trashcan':
-            return Rect(self.rect[0], self.rect[1] + 70, self.rect[2], self.rect[3] - 70)
+        self.projection = self.load_rect(type, 'projection')
+        self.projection.center = pos
+        self.height = height
 
     def on_collision(self, side, sprite, group, dx, dy):
-        sprite.rect.move_ip(-dx, -dy)
+        sprite.projection.move_ip(-dx, -dy)
+
+    def get_projection(self):
+        return self.projection
+
+    def get_height_rect(self):
+        rect = self.get_fixed_rect(self.type, 'height', self.projection)
+        rect.move_ip(0, -self.height)
+        return rect
+
+    def get_sprite_rect(self):
+        return self.fix_sprite_rect(self.type, self.get_height_rect(), self.image)
+
+    def on_fall_collision(self, side, sprite, group, dh):
+        # something landed to surface so bump it back
+        sprite.height += dh
+        sprite.can_jump = 1
+        sprite.dfall = 0
+        if side == 2:
+            sprite.standing_on = self
+            # fix sprite projection
+            d = sprite.projection.bottom - self.projection.bottom
+            sprite.projection.bottom = self.projection.bottom
+            sprite.height -= d
 
 class Balloon(Simple):
     def __init__(self, initiator_rect, text):
@@ -628,9 +796,9 @@ class Balloon(Simple):
         surf.blit(ren, (rect.centerx-ren.get_width()/2, rect.centery-ren.get_height()/2 - 5))
 
 class SpawnTrigger(Collidable):
-    def __init__(self, rect, spawnobj, spawnx, spawny, spawndir):
+    def __init__(self, projection, spawnobj, spawnx, spawny, spawndir):
         Collidable.__init__(self, self.groups)
-        self.rect = rect
+        self.projection = projection
         self.spawnobj = spawnobj
         self.spawnx = spawnx
         self.spawny = spawny
@@ -644,18 +812,38 @@ class SpawnTrigger(Collidable):
             Betard((self.spawnx, self.spawny), facing = self.spawndir)
         self.kill()
 
+    def get_height_rect(self):
+        rect = copy.copy(self.get_projection())
+        rect.move_ip(0, -self.height)
+        return rect
+
 class DialogTrigger(Collidable):
-    def __init__(self, rect, dialog):
+    def __init__(self, projection, dialog):
         Collidable.__init__(self, self.groups)
-        self.rect = rect
+        self.projection = projection
         self.dialog = dialog
 
     def draw(self, surf, rect):
         pass
 
-    def on_collision(self, side, sprite, group, dx, dy):
+    def hit(self):
+        self.set_state("pain")
+        self.pain_timer = 15
+
+    def activate(self):
         self.game.start_dialog(DialogBar(self.dialog))
         self.kill()
+
+    def on_collision(self, side, sprite, group, dx, dy):
+        self.activate()
+
+    def on_fall_collision(self, side, sprite, group, dy):
+        self.activate()
+
+    def get_height_rect(self):
+        rect = copy.copy(self.get_projection())
+        rect.move_ip(0, -self.height)
+        return rect
 
 class DialogBar(Simple):
     draw_always = True
@@ -686,8 +874,8 @@ class DialogBar(Simple):
             except:
                 raise SystemExit, "ERROR: Can't load strings for dialog '%s'" % dialog
 
-        self.rect = self.image.get_rect(topleft = (0, 0))
-        self.rect.centerx = self.game.screen.get_rect().centerx
+        self.projection = self.image.get_rect(topleft = (0, 0))
+        self.projection.centerx = self.game.screen.get_rect().centerx
         self.font = pygame.font.Font(filepath("font.ttf"), 14)
         self.part = 0
 
@@ -702,8 +890,8 @@ class DialogBar(Simple):
         pass
 
     def draw(self, surf, rect):
-        surf.blit(self.image, self.rect)
-        surf.blit(self.face1, (self.rect.x + 10, self.rect.y + 10))
-        surf.blit(self.face2, (self.rect.x + 566, self.rect.y + 10))
+        surf.blit(self.image, self.get_sprite_rect())
+        surf.blit(self.face1, (self.get_sprite_rect().x + 10, self.get_sprite_rect().y + 10))
+        surf.blit(self.face2, (self.get_sprite_rect().x + 566, self.get_sprite_rect().y + 10))
         ren = self.font.render(self.text[self.part], 1, (255, 255, 255))
-        surf.blit(ren, (self.rect.centerx-ren.get_width()/2, self.rect.centery-ren.get_height()/2))
+        surf.blit(ren, (self.get_sprite_rect().centerx-ren.get_width()/2, self.get_sprite_rect().centery-ren.get_height()/2))

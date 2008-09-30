@@ -26,28 +26,38 @@ s1 = @sky,      2,   0,   -100, 1
 s2 = @sky,      2,   790, -100, 1
 
 [objects]
-#         object   x    y    z,  dir
-player  = player, 100, 260,  0, right
-b  = betard, 1800, 260,  0, right
-#obj4    = ammo,   400, 350,  0,
-#obj6    = ammo,   430, 350,  0,
-#obj7    = ammo,   460, 350,  0,
-#box1    = box,    370, 360,  0,
-#box2    = box,    800, 400,  0,
-box3    = box_group, 100, 200,  0,
-#box4    = box,    2750, 300,  0,
-#barrel1 = barrel, 600, 350,  0,
-#barrel2 = barrel, 620, 300,  1,
-#tire = tire, 2400, 400,  1,
-tcan = trashcan, 400, 250,  1,
+#         object       x    y    h,    dir
+player   = player,    350,  440, 0, right
+#b       = betard,    450,  460, 0,   right
+obj4    = logo,       370,  340, 100,
+#obj6    = ammo,      430,  350, 0,
+#obj7    = ammo,      460,  350, 0,
+box1     = box,       370,  340, 0,
+box2     = box,       470,  340, 50,
+box3     = box,       570,  340, 100,
+box4     = box,       670,  340, 150,
+
+box5     = box,       870,  340, 150,
+box6     = box,       970,  340, 150,
+
+
+#box2     = box,      370,  340, 0,
+#box3     = box,      570,  361, 0,
+#box2    = box,       800,  400, 0,
+#box3    = box_group, 100,  200, 0,
+#box4    = box,       2750, 300, 0,
+#barrel1 = barrel,    600,  350, 0,
+#barrel2 = barrel,    620,  300, 0,
+#tire    = tire,      2400, 400, 0,
+#tcan    = trashcan,  400,  250, 0,
 
 [triggers]
 #         type          x     y    w    h     obj     x    y    dir
-spawn1 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 250, right
-spawn2 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 310, right
-spawn3 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 250, left
-spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 300, left
-spawn5 = spawn_trigger, 2900, 300, 100, 175, betard, 2750, 120, right
+#spawn1 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 250, right
+#spawn2 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 310, right
+#spawn3 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 250, left
+#spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 300, left
+#spawn5 = spawn_trigger, 2900, 300, 100, 175, betard, 2750, 120, right
 
-dialog1 = dialog_trigger, 755, 300, 100, 175, dialog1
-dialog2 = dialog_trigger, 2150, 300, 100, 175, dialog2
+dialog1 = dialog_trigger, 430, 340, 90, 20, dialog1
+#dialog2 = dialog_trigger, 2150, 300, 100, 175, dialog2

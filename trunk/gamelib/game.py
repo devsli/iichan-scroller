@@ -10,39 +10,36 @@ from data import *
 from sprites import *
 from level import *
 
-def RelRect(actor, camera):
-    return Rect(actor.rect.x-camera.rect.x, actor.rect.y-camera.rect.y, actor.rect.w, actor.rect.h)
 
-def RelProjection(actor, camera):
-    return Rect(actor.get_projection().x-camera.rect.x, actor.get_projection().y-camera.rect.y, actor.get_projection().w, actor.get_projection().h)
+def RelRect(rect, camera):
+    return Rect(rect.x - camera.rect.x, rect.y - camera.rect.y, rect.w, rect.h)
 
 class Camera(object):
     def __init__(self, player, width):
         self.player = player
         self.rect = pygame.display.get_surface().get_rect()
         self.world = Rect(0, 0, width, 480)
-        self.rect.center = self.player.rect.center
+        self.rect.center = self.player.get_height_rect().center
     def update(self):
-        if self.player.rect.centerx > self.rect.centerx+32:
-            self.rect.centerx = self.player.rect.centerx-32
-        if self.player.rect.centerx < self.rect.centerx-32:
-            self.rect.centerx = self.player.rect.centerx+32
-        if self.player.rect.centery > self.rect.centery+32:
-            self.rect.centery = self.player.rect.centery-32
-        if self.player.rect.centery < self.rect.centery-32:
-            self.rect.centery = self.player.rect.centery+32
+        if self.player.get_height_rect().centerx > self.rect.centerx+32:
+            self.rect.centerx = self.player.get_height_rect().centerx-32
+        if self.player.get_height_rect().centerx < self.rect.centerx-32:
+            self.rect.centerx = self.player.get_height_rect().centerx+32
+        if self.player.get_height_rect().centery > self.rect.centery+32:
+            self.rect.centery = self.player.get_height_rect().centery-32
+        if self.player.get_height_rect().centery < self.rect.centery-32:
+            self.rect.centery = self.player.get_height_rect().centery+32
         self.rect.clamp_ip(self.world)
 
     def draw_sprites(self, surf, sprites):
         for s in sprites:
-            if s.rect.colliderect(self.rect) or s.draw_always:
-                s.draw(surf, RelRect(s, self))
+            if s.get_sprite_rect().colliderect(self.rect) or s.draw_always:
+                s.draw(surf, RelRect(s.get_sprite_rect(), self))
 
 class Game(object):
     dialog_mode = False
 
     def __init__(self, screen, config, continuing=False):
-
         self.screen = screen
         self.config = config
         self.sprites = pygame.sprite.LayeredUpdates()
@@ -122,12 +119,13 @@ class Game(object):
         DogAI.player = self.player
 
         self.running = 1
-        self.music = "because_she_said_no.ogg"
-        play_music(self.music, 0.5)
+        if self.config.music == 1:
+            self.music = "because_she_said_no.ogg"
+            play_music(self.music, 0.5)
 
         # set layers for static sprites
         for sprite in self.sprites:
-            self.sprites.change_layer(sprite, sprite.rect.bottom)
+            self.sprites.change_layer(sprite, sprite.get_projection().centery)
 
         self.main_loop()
 
@@ -178,19 +176,23 @@ class Game(object):
                         if not self.dialog_mode:
                             if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
                                 if self.player.state in ["duck", "walk"]:
-                                    shot = PlayerShot(
-                                        self.player.rect.center,
-                                        self.player.facing,
-                                        self.player.gifs["blast"],
-                                        self.player
-                                    )
+                                    height = self.player.height + 60
                                 else:
-                                    shot = PlayerShot(
-                                        (self.player.rect.center[0], self.player.rect.center[1]-25),
-                                        self.player.facing,
-                                        self.player.gifs["blast"],
-                                        self.player
-                                    )
+                                    height = self.player.height + 85
+                                pos = [self.player.get_projection().centerx, self.player.get_projection().centery]
+
+                                if self.player.facing > 0:
+                                    pos[0] = self.player.get_height_rect().right + 100
+                                else:
+                                    pos[0] = self.player.get_height_rect().left - 100
+
+                                shot = PlayerShot(
+                                    pos,
+                                    self.player.facing,
+                                    self.player.gifs["blast"],
+                                    self.player,
+                                    height
+                                )
                                 self.sprites.change_layer(shot, shot.layer)
                                 self.player.shoot()
                         else:
@@ -199,19 +201,6 @@ class Game(object):
                         self.player.state = "duck"
                     if event.key == K_d:
                         self.config.debug = not self.config.debug
-
-            for powerup in self.powerups:
-                if self.player.get_projection().colliderect(powerup.rect):
-                    # Pickup animation
-                    if powerup.type == "ammo" and self.player.hp < 100:
-                        self.player.ammo += 25
-                        powerup.kill()
-                    elif powerup.type == "heart" and self.player.hp < 5:
-                        self.player.hp += 1
-                        powerup.kill()
-                    elif powerup.type == "logo":
-                        self.player.score += 25
-                        powerup.kill()
 
             # Updating all sprites
             if not self.dialog_mode:
@@ -225,7 +214,7 @@ class Game(object):
             bglayer_speed = [1, 0.9, 0.2]
             for bglayer_num in range(2, -1, -1):
                 for bg in self.level.backgrounds_layers[bglayer_num]:
-                    rect = RelRect(bg, self.camera)
+                    rect = RelRect(bg.texture.get_rect(), self.camera)
                     rect.x = bg.x - self.camera.rect.x * bglayer_speed[bglayer_num]
                     if rect.colliderect(Rect(0, 0, self.config.width, 480)):
                         self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * bglayer_speed[bglayer_num], bg.y))
@@ -234,7 +223,7 @@ class Game(object):
 
             # changing layer for moving objects
             for sprite in self.notstatic:
-                new_layer = RelProjection(sprite, self.camera).bottom
+                new_layer = RelRect(sprite.get_projection(), self.camera).bottom
                 if new_layer != self.sprites.get_layer_of_sprite(sprite):
                     self.sprites.change_layer(sprite, new_layer)
 
@@ -246,17 +235,18 @@ class Game(object):
             # show bboxes for debugging and easy objects creating
             if self.config.debug:
                 for sprite in self.sprites:
-                    pygame.draw.rect(self.screen, (255, 0, 0),  RelRect(sprite, self.camera), 1)
-                    pygame.draw.rect(self.screen, (0, 255, 0),  RelProjection(sprite, self.camera), 1)
+                    pygame.draw.rect(self.screen, (0, 255, 0),  RelRect(sprite.get_projection(), self.camera), 1)
+                    pygame.draw.rect(self.screen, (255, 0, 0),  RelRect(sprite.get_height_rect(), self.camera), 1)
                     ren = self.debug_font.render("%d" % self.sprites.get_layer_of_sprite(sprite), 1, (255, 255, 255))
-                    self.screen.blit(ren, RelRect(sprite, self.camera))
+                    self.screen.blit(ren, RelRect(sprite.get_height_rect(), self.camera))
 
                 for trigger in self.triggers:
-                    pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger, self.camera), 1)
+                    pygame.draw.rect(self.screen, (0, 255, 0),  RelRect(trigger.get_projection(), self.camera), 1)
+                    pygame.draw.rect(self.screen, (0, 0, 255),  RelRect(trigger.get_height_rect(), self.camera), 1)
 
                 for betard in self.monsters:
                     ren = self.debug_font.render("Speed: %d %d" % (betard.xspeed, betard.yspeed), 1, (255, 255, 255))
-                    self.screen.blit(ren, (RelRect(betard, self.camera)[0], RelRect(betard, self.camera)[1]+16))
+                    self.screen.blit(ren, (RelRect(betard.get_height_rect(), self.camera)[0], RelRect(betard.get_height_rect(), self.camera)[1]+16))
 
             if not self.dialog_mode:
                 self.draw_stats()
