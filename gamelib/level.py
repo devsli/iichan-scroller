@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 
-import pygame
+import pygame, sys
 from pygame.locals import *
 import ConfigParser
 
 from data import *
 from sprites import *
+from utils import *
 
 class Background:
     def __init__(self, file, x, y, z):
@@ -28,7 +29,6 @@ class Background:
 
 class Level:
     size = (4000, 200)
-
     def __init__(self, lvl=1):
         self.generate_lvl(lvl)
 
@@ -51,11 +51,11 @@ class Level:
         self.backgrounds_layers = [[], [], []]
         if 'background' in level.sections():
             for background in level.items('background'):
-                file, layer, x, y, z = background[1].split(',')
                 try:
+                    file, layer, x, y, z = background[1].split(',')
                     file = resources[file] if file[0] == '@' else file
                 except:
-                    raise SystemExit, "Unknown resource '%s' in file '%s'" % (file, level_file)
+                    raise EmergencyExit, "Error when parsing line '%s'" % background[1]
                 self.backgrounds_layers[int(layer)].append(Background(file, int(x), int(y), int(z)))
 
         for backgrounds in self.backgrounds_layers:
@@ -63,27 +63,33 @@ class Level:
 
         if 'objects' in level.sections():
             for object in level.items('objects'):
-                obj, x, y, h, dir = object[1].split(',')
-                dir = -1 if dir.strip() == "left" else 1
-                obj = obj.strip()
-                x = int(x)
-                y = int(y)
-                h = int(h)
-                if obj in ['ammo', 'heart', 'logo']:
-                    PowerUp((x, y), obj, h)
-                elif obj == 'betard':
-                    Betard((x, y), facing = dir)
-                elif obj == 'player':
-                    self.player = Player((x, y), dir, h)
-                elif obj in ['box', 'barrel', 'box_group', 'tire', 'trashcan']:
-                    Static((x, y), obj, h)
+                try:
+                    group_obj, x, y, h, dir = object[1].split(',')
+                    dir = -1 if dir.strip() == "left" else 1
+                    group_obj = group_obj.strip()
+                    group, obj = group_obj.split('.')
+
+                    x = int(x)
+                    y = int(y)
+                    h = int(h)
+
+                    if group == 'powerup':
+                        PowerUp((x, y), obj, h)
+                    elif group == 'enemy':
+                        Betard((x, y), facing = dir)
+                    elif group == 'player':
+                        self.player = Player((x, y), dir, h)
+                    elif group == 'static':
+                        Static((x, y), obj, h)
+                except EmergencyExit:
+                    raise EmergencyExit, "Can't load object '%s' during loading '%s'" % (group_obj, level_file)
 
         if 'triggers' in level.sections():
             for trigger in level.items('triggers'):
                 all = trigger[1].split(',')
                 obj = all[0].strip()
                 if obj == 'spawn_trigger':
-                    obj, x, y, w, h, spawnobj, spawnx, spawny, spawndir = trigger[1].split(',')
+                    obj, x, y, w, h, spawnobj, spawnx, spawny, spawnheight, spawndir = trigger[1].split(',')
                     x = int(x)
                     y = int(y)
                     w = int(w)
@@ -91,6 +97,7 @@ class Level:
                     spawnobj = spawnobj.strip()
                     spawnx   = int(spawnx)
                     spawny   = int(spawny)
+                    spawnheight   = int(spawnheight)
                     spawndir = dir = -1 if spawndir.strip() == "left" else 1
                     SpawnTrigger(Rect(x, y, w, h), spawnobj, spawnx, spawny, spawndir)
                 elif obj == 'dialog_trigger':

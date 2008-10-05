@@ -72,38 +72,8 @@ class Game(object):
         self.heart = load_image("heart_bar.gif")
         self.cells = load_image("cell_bar.gif")
 
-        Player.gifs = {
-            "idle": load_anim("loli_idle.gif"),
-            "jump": load_anim("loli_jump.gif"),
-            "walk": load_anim("loli_walk.gif"),
-            "duck": load_anim("loli_duck.gif"),
-            "duck_shoot": load_anim("loli_duck_shoot.gif"),
-            "stand_shoot": load_anim("loli_stand_shoot.gif"),
-            "blast": load_anim("blast.gif"),
-            "pain": load_anim("loli_hit.gif"),
-        }
-        PowerUp.gifs = {
-            "heart": load_anim("heart.gif"),
-            "ammo": load_anim("ammo.gif"),
-            "logo": load_anim("logo.gif"),
-        }
-        Betard.gifs = {
-            "idle": load_anim("betard_idle.gif"),
-            "walk": load_anim("betard_walk.gif"),
-            "pain": load_anim("betard_pain.png"),
-            "attack": load_anim("betard_attack.gif"),
-            "fireball": load_anim("fireball.gif"),
-        }
-        Static.images = {
-            "box" : load_image("box.png"),
-            "box_group" : load_image("box_group.png"),
-            "barrel" : load_image("barrel.png"),
-            "tire" : load_image("tire.png"),
-            "trashcan" : load_image("trashcan.png"),
-        }
         Balloon.image = load_image("balloon.png")
         DialogBar.image = load_image("dialog_bar.png")
-
 
         self.score = 0
         self.lives = 3
@@ -173,30 +143,28 @@ class Game(object):
                     if event.key == K_ESCAPE:
                         sys.exit()
                     elif event.key == K_SPACE:
+                        # FIXME: move into Player class
                         if not self.dialog_mode:
                             if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
-                                if self.player.state in ["duck", "walk"]:
+                                if self.player.state in ["duck", "duck_shoot", "walk"]:
                                     height = self.player.height + 60
                                 else:
                                     height = self.player.height + 85
                                 pos = [self.player.get_projection().centerx, self.player.get_projection().centery]
 
                                 if self.player.facing > 0:
-                                    pos[0] = self.player.get_height_rect().right + 100
+                                    pos[0] = self.player.get_height_rect().right
                                 else:
-                                    pos[0] = self.player.get_height_rect().left - 100
+                                    pos[0] = self.player.get_height_rect().left
 
-                                shot = PlayerShot(
-                                    pos,
-                                    self.player.facing,
-                                    self.player.gifs["blast"],
-                                    self.player,
-                                    height
-                                )
+                                shot = PlayerShot(pos, self.player.facing,
+                                                  self.player.gifs['blast'],
+                                                  self.player, height)
                                 self.sprites.change_layer(shot, shot.layer)
                                 self.player.shoot()
                         else:
                             self.dialog.continue_dialog()
+                    # FIXME: move into Player class
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
                     if event.key == K_d:
@@ -209,6 +177,8 @@ class Game(object):
             else:
                 self.dialog.update()
 
+            # FIXME: may be move cleaning into debug (useful during design/development,
+            # not necessary in release)
             pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, self.config.width, 480), 0)
             # draw 3 bg layers
             bglayer_speed = [1, 0.9, 0.2]
@@ -230,7 +200,6 @@ class Game(object):
             # move some sprites to front layer
             for sprite in self.topmost:
                 self.sprites.move_to_front(sprite)
-
 
             # show bboxes for debugging and easy objects creating
             if self.config.debug:
