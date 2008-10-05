@@ -248,7 +248,32 @@ class Player(Collidable):
     def duck(self):
         self.set_state("duck")
 
-    def shoot(self):
+    def fire(self, spritesArray):
+        """
+        Fire, push bullet sprite into spritesArray
+        """
+        if (self.ammo > 0) and (self.shoot_timer <= 0):
+            if self.state in ["duck", "duck_shoot", "walk"]:
+                height = self.height + 60
+            else:
+                height = self.height + 85
+            pos = [self.get_projection().centerx, self.get_projection().centery]
+
+            if self.facing > 0:
+                pos[0] = self.get_height_rect().right
+            else:
+                pos[0] = self.get_height_rect().left
+
+            shot = PlayerShot(pos, self.facing,
+                self.gifs['blast'],
+                self, height)
+            spritesArray.change_layer(shot, shot.layer)
+            self.__shoot()
+
+    def __shoot(self):
+        """
+        Release the trigger of a gun
+        """
         if self.shoot_timer <= 0:
             self.shoot_timer = 15
             if self.state in ["idle", "walk"]:

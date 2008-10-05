@@ -143,28 +143,10 @@ class Game(object):
                     if event.key == K_ESCAPE:
                         sys.exit()
                     elif event.key == K_SPACE:
-                        # FIXME: move into Player class
                         if not self.dialog_mode:
-                            if (self.player.ammo > 0) and (self.player.shoot_timer <= 0):
-                                if self.player.state in ["duck", "duck_shoot", "walk"]:
-                                    height = self.player.height + 60
-                                else:
-                                    height = self.player.height + 85
-                                pos = [self.player.get_projection().centerx, self.player.get_projection().centery]
-
-                                if self.player.facing > 0:
-                                    pos[0] = self.player.get_height_rect().right
-                                else:
-                                    pos[0] = self.player.get_height_rect().left
-
-                                shot = PlayerShot(pos, self.player.facing,
-                                                  self.player.gifs['blast'],
-                                                  self.player, height)
-                                self.sprites.change_layer(shot, shot.layer)
-                                self.player.shoot()
+                            self.player.fire(self.sprites)
                         else:
                             self.dialog.continue_dialog()
-                    # FIXME: move into Player class
                     if event.key == K_LCTRL:
                         self.player.state = "duck"
                     if event.key == K_d:
