@@ -1,0 +1,85 @@
+#############################
+# player sprites
+#############################
+[player.loli]
+projection=0,0,60,20
+height=0,-60,60,140
+sprite=0,-5
+height_duck=0,-50,60,120
+sprite_duck=0,-15
+
+texture_idle = sprites/loli_idle.gif
+texture_jump = sprites/loli_jump.gif
+texture_fall = sprites/loli_fall.gif
+texture_walk = sprites/loli_walk.gif
+texture_duck = sprites/loli_duck.gif
+texture_duck_shoot = sprites/loli_duck_shoot.gif
+texture_stand_shoot = sprites/loli_stand_shoot.gif
+texture_hit = sprites/loli_hit.gif
+texture_blast = sprites/blast.gif
+
+[blast]
+projection=0,0,20,20
+sprite_left=30,3
+sprite_right=-30,3
+
+# getted from player (texture_blast)
+#texture=
+
+#############################
+# powerup sprites
+#############################
+[powerup.logo]
+projection=0,0,35,15
+height=0,-20,35,35
+texture=sprites/logo.gif
+
+[powerup.ammo]
+projection=0,0,35,15
+height=0,-20,35,35
+texture=sprites/ammo.gif
+
+[powerup.heart]
+projection=0,0,35,15
+height=0,-20,35,35
+texture=sprites/heart.gif
+
+#############################
+# betard sprites
+#############################
+[enemy.betard]
+projection=0,0,70,20
+height=0,-75,70,150
+sprite=0,0
+
+texture_idle = sprites/betard_idle.gif
+texture_walk = sprites/betard_walk.gif
+texture_pain = sprites/betard_pain.png
+texture_attack = sprites/betard_attack.gif
+texture_fireball = sprites/fireball.gif
+
+
+[fireball]
+projection=0,0,20,20
+sprite_left=0,0
+sprite_right=0,0
+
+# getted from betard (texture_fireball)
+#texture=
+
+#############################
+# static sprites
+#############################
+[static.box]
+type=static
+projection=0,0,90,20
+height=0,-40,90,100
+sprite=0,-5
+texture=sprites/box.png
+
+[static.trashcan]
+type=static
+projection=0,0,60,15
+height=0,-40,60,80
+sprite=0,0
+texture=sprites/trashcan.png

@@ -47,6 +47,7 @@ def load_anim(file, mode="P"):
         frames.append(pg_surf.convert_alpha())
         i += 1
     print file, "loaded"
+    # FIXME: Why reverse?!
     frames.reverse()
     return frames
 
