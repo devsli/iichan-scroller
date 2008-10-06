@@ -1,0 +1,47 @@
+[general]
+size = 3200, 600
+[background]
+# image - filename or resourcename (from base.lvl)
+# layer - general z-index
+#   0 - near (street, fences, buildings)
+#   1 - far (trees, bushes)
+#   2 - very far (sky)
+#   x, y - initial position
+#   z - local z-index on layer
+
+#     image    layer x     y    z
+f1 = @fence1,  0,   0,    000,  0
+h1 = @house,   0,   800,  000,  0
+f2 = @fence1,  0,   1600, 000,  0
+h2 = @house2,   0,   2400,  000,  0
+
+b1 = @bushes,   1,   0,    100,  1
+b2 = @bushes,   1,   800,  100,  0
+b3 = @bushes,   1,   1600, 100,  0
+b4 = @bushes,   1,   2400, 100,  0
+
+b5 = @bushes,   1,   -100,  170,  0
+
+s1 = @sky,      2,   0,   -100, 1
+s2 = @sky,      2,   790, -100, 1
+
+[objects]
+#         object       x    y    h,    dir
+p     = player.loli,    220,  440, 0, right
+e1    = enemy.betard,    450,  460, 0,   right
+l1    = powerup.logo,      100,  320, 0,
+h1    = powerup.heart,     200,  320, 0,
+a1    = powerup.ammo,      300,  320, 0,
+b1    = static.box, 320,  440, 0,
+t1    = static.trashcan, 420,  340, 0,
+
+[triggers]
+#         type           x     y    w    h    obj     x     y    h   dir
+#spawn1 = spawn_trigger, 200, 300, 100, 175, betard, 370, 350, 100,  right
+#spawn2 = spawn_trigger, 2150, 300, 100, 175, betard, 1700, 310, 0,  right
+#spawn3 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 250, 0,  left
+#spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 300, 0,  left
+#spawn5 = spawn_trigger, 2900, 300, 100, 175, betard, 2750, 120, 0,  right
+
+dialog1 = dialog_trigger, 430, 340, 90, 20, dialog1
+#dialog2 = dialog_trigger, 2150, 300, 100, 175, dialog2
