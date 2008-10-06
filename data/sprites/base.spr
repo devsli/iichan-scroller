@@ -2,11 +2,11 @@
 # player sprites
 #############################
 [player.loli]
-projection=0,0,60,20
-height=0,-60,60,140
-sprite=0,-5
-height_duck=0,-50,60,120
-sprite_duck=0,-15
+projection=0,0,30,10
+height=0,-30,30,70
+sprite=0,-3
+height_duck=0,-25,30,60
+sprite_duck=0,-7
 
 texture_idle = sprites/loli_idle.gif
 texture_jump = sprites/loli_jump.gif
@@ -19,9 +19,9 @@ texture_hit = sprites/loli_hit.gif
 texture_blast = sprites/blast.gif
 
 [blast]
-projection=0,0,20,20
-sprite_left=30,3
-sprite_right=-30,3
+projection=0,0,10,10
+sprite_left=15,2
+sprite_right=-15,1
 
 # getted from player (texture_blast)
 #texture=
@@ -30,26 +30,26 @@ sprite_right=-30,3
 # powerup sprites
 #############################
 [powerup.logo]
-projection=0,0,35,15
-height=0,-20,35,35
+projection=0,0,17,7
+height=0,-10,17,17
 texture=sprites/logo.gif
 
 [powerup.ammo]
-projection=0,0,35,15
-height=0,-20,35,35
+projection=0,0,17,7
+height=0,-10,17,17
 texture=sprites/ammo.gif
 
 [powerup.heart]
-projection=0,0,35,15
-height=0,-20,35,35
+projection=0,0,17,7
+height=0,-10,17,17
 texture=sprites/heart.gif
 
 #############################
 # betard sprites
 #############################
 [enemy.betard]
-projection=0,0,70,20
-height=0,-75,70,150
+projection=0,0,35,10
+height=0,-37,35,75
 sprite=0,0
 
 texture_idle = sprites/betard_idle.gif
@@ -60,7 +60,7 @@ texture_fireball = sprites/fireball.gif
 
 
 [fireball]
-projection=0,0,20,20
+projection=0,0,10,10
 sprite_left=0,0
 sprite_right=0,0
 
@@ -72,14 +72,14 @@ sprite_right=0,0
 #############################
 [static.box]
 type=static
-projection=0,0,90,20
-height=0,-40,90,100
-sprite=0,-5
+projection=0,0,45,10
+height=0,-20,45,50
+sprite=0,-3
 texture=sprites/box.png
 
 [static.trashcan]
 type=static
-projection=0,0,60,15
-height=0,-40,60,80
+projection=0,0,30,7
+height=0,-20,30,40
 sprite=0,0
 texture=sprites/trashcan.png

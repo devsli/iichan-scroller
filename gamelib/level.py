@@ -3,6 +3,7 @@
 import pygame, sys
 from pygame.locals import *
 import ConfigParser
+import config
 
 from data import *
 from sprites import *
@@ -28,7 +29,7 @@ class Background:
             return 0
 
 class Level:
-    size = (4000, 200)
+    size = (2000*config.zoom, 100*config.zoom)
     def __init__(self, lvl=1):
         self.generate_lvl(lvl)
 
@@ -39,7 +40,7 @@ class Level:
 
         try:
             x, y = level.get("general", "size").split(',')
-            self.size = (int(x), int(y))
+            self.size = (int(x)*config.zoom, int(y)*config.zoom)
         except:
             pass
 
@@ -56,7 +57,7 @@ class Level:
                     file = resources[file] if file[0] == '@' else file
                 except:
                     raise EmergencyExit, "Error when parsing line '%s'" % background[1]
-                self.backgrounds_layers[int(layer)].append(Background(file, int(x), int(y), int(z)))
+                self.backgrounds_layers[int(layer)].append(Background(file, int(x)*config.zoom, int(y)*config.zoom, int(z)*config.zoom))
 
         for backgrounds in self.backgrounds_layers:
             backgrounds.sort(cmp=Background.zcmp)
@@ -69,9 +70,9 @@ class Level:
                     group_obj = group_obj.strip()
                     group, obj = group_obj.split('.')
 
-                    x = int(x)
-                    y = int(y)
-                    h = int(h)
+                    x = int(x)*config.zoom
+                    y = int(y)*config.zoom
+                    h = int(h)*config.zoom
 
                     if group == 'powerup':
                         PowerUp((x, y), obj, h)
@@ -90,22 +91,22 @@ class Level:
                 obj = all[0].strip()
                 if obj == 'spawn_trigger':
                     obj, x, y, w, h, spawnobj, spawnx, spawny, spawnheight, spawndir = trigger[1].split(',')
-                    x = int(x)
-                    y = int(y)
-                    w = int(w)
-                    h = int(h)
+                    x = int(x)*config.zoom
+                    y = int(y)*config.zoom
+                    w = int(w)*config.zoom
+                    h = int(h)*config.zoom
                     spawnobj = spawnobj.strip()
-                    spawnx   = int(spawnx)
-                    spawny   = int(spawny)
+                    spawnx   = int(spawnx)*config.zoom
+                    spawny   = int(spawny)*config.zoom
                     spawnheight   = int(spawnheight)
                     spawndir = dir = -1 if spawndir.strip() == "left" else 1
                     SpawnTrigger(Rect(x, y, w, h), spawnobj, spawnx, spawny, spawndir)
                 elif obj == 'dialog_trigger':
                     obj, x, y, w, h, dialog = trigger[1].split(',')
-                    x = int(x)
-                    y = int(y)
-                    w = int(w)
-                    h = int(h)
+                    x = int(x)*config.zoom
+                    y = int(y)*config.zoom
+                    w = int(w)*config.zoom
+                    h = int(h)*config.zoom
                     dialog = dialog.strip()
                     DialogTrigger(Rect(x, y, w, h), dialog)
 

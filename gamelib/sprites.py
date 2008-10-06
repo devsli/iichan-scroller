@@ -36,7 +36,7 @@ class SpriteHelper():
         '''Loading rect from file'''
         try:
             x, y, w, h = self.sprites_file.get(sprite_name, rect_name).split(',')
-            return Rect(int(x), int(y), int(w), int(h))
+            return Rect(int(x)*config.zoom, int(y)*config.zoom, int(w)*config.zoom, int(h)*config.zoom)
         except:
             raise SystemExit, "ERROR: Can't load rect '%s:%s'" % (sprite_name, rect_name)
 
@@ -52,7 +52,7 @@ class SpriteHelper():
         '''Getting sprite rect aligned with base rect center'''
         x, y = self.sprites_file.get(sprite_name, fix_name).split(',')
         image_rect = image.get_rect(center = base_rect.center)
-        image_rect.move_ip(int(x), int(y))
+        image_rect.move_ip(int(x)*config.zoom, int(y)*config.zoom)
         return image_rect
 
     def load_anim(self, sprite_name, anim_name):
@@ -156,9 +156,6 @@ class Collidable(pygame.sprite.Sprite, SpriteHelper):
         return self.get_projection().left - oldr.left, self.get_projection().top - oldr.top
 
     def fall(self, dh):
-        return self.__fall(dh)
-
-    def __fall(self, dh):
         oldr = copy.copy(self.get_height_rect())
 
         height = self.get_height_rect()
@@ -254,9 +251,9 @@ class Player(Collidable):
         """
         if (self.ammo > 0) and (self.shoot_timer <= 0):
             if self.state in ["duck", "duck_shoot", "walk"]:
-                height = self.height + 60
+                height = self.height + 30*config.zoom
             else:
-                height = self.height + 85
+                height = self.height + 42*config.zoom
             pos = [self.get_projection().centerx, self.get_projection().centery]
 
             if self.facing > 0:
@@ -295,12 +292,12 @@ class Player(Collidable):
             if self.dfall < 0:
                 # trying to increase height
                 dh = self.fall(self.dfall)
-                self.dfall += 1
+                self.dfall += 1*config.zoom
             # falling
             elif self.height > 0:
                 # trying to decrease height
                 dh = self.fall(self.dfall)
-                self.dfall += 1
+                self.dfall += 1*config.zoom
                 # landing on ground
                 if self.height <= 0:
                     self.height = 0
@@ -329,7 +326,7 @@ class Player(Collidable):
                         elif self.standing_on != None and self.can_jump:
                             self.can_jump = 0
                             self.projection.top = self.standing_on.get_projection().bottom
-                            self.dfall = -10
+                            self.dfall = -7*config.zoom
                             self.standing_on = None
                     elif key[K_UP]:
                         # don't allow moving in air
@@ -340,20 +337,20 @@ class Player(Collidable):
                         elif self.standing_on != None and self.can_jump:
                             self.can_jump = 0
                             self.projection.bottom = self.standing_on.get_projection().top
-                            self.dfall = -10
+                            self.dfall = -10*config.zoom
                             self.standing_on = None
                     elif key[K_LALT]:
                         if self.can_jump:
                             self.can_jump = 0
-                            self.dfall = -15
+                            self.dfall = -10*config.zoom
 
             # Moving area
-            if self.get_projection().left < 10:
-                self.projection.left = 10
-            if self.get_projection().bottom > 460:
-                self.projection.bottom = 460
-            if self.get_projection().top < 310:
-                self.projection.top = 310
+            if self.get_projection().left < 5*config.zoom:
+                self.projection.left = 5*config.zoom
+            if self.get_projection().bottom > 230*config.zoom:
+                self.projection.bottom = 230*config.zoom
+            if self.get_projection().top < 155*config.zoom:
+                self.projection.top = 155*config.zoom
 
             if self.shoot_timer <= 0:
                 if key[K_LCTRL]:
@@ -390,7 +387,7 @@ class Player(Collidable):
         if dx < 0:
             self.image = self.left_images[self.frame/4 % len(self.left_images)]
 
-        self.move(4*dx, 4*dy)
+        self.move(2*dx*config.zoom, 2*dy*config.zoom)
 
         # Timers and frames
         self.frame -= 1
@@ -448,9 +445,9 @@ class PlayerShot(Collidable):
         self.projection.center = pos
         self.height = height
         if self.facing > 0:
-            self.speed = 10
+            self.speed = 5*config.zoom
         elif self.facing < 0:
-            self.speed = -10
+            self.speed = -5*config.zoom
         self.layer = self.get_projection().bottom
         self.timer = 0
 
@@ -511,9 +508,9 @@ class Fireball(Collidable):
         self.projection.center = pos
         self.height = height
         if self.facing > 0:
-            self.speed = 10
+            self.speed = 5*config.zoom
         elif self.facing < 0:
-            self.speed = -10
+            self.speed = -5*config.zoom
         self.layer = self.get_projection().bottom
         self.timer = 0
 
@@ -604,9 +601,9 @@ class PowerUp(Collidable):
         self.collect()
 
 class DogAI():
-    visibility_range = 450
-    surrender_range = 1000
-    attack_range = 100
+    visibility_range = 225*config.zoom
+    surrender_range = 500*config.zoom
+    attack_range = 50*config.zoom
     player_path = []
     ai_timer = 0
     in_attack_point = False
@@ -636,11 +633,11 @@ class DogAI():
                         self.player_path = self.player_path[-30:]
                     path_point = self.player_path[0]
 
-                    if abs(self.get_player_distance()) <= 100:
+                    if abs(self.get_player_distance()) <= 50*config.zoom:
                         if self.xspeed > 0:
-                            path_point[0] = self.player.get_projection().centerx - 100
+                            path_point[0] = self.player.get_projection().centerx - 50*config.zoom
                         elif self.xspeed < 0:
-                            path_point[0] = self.player.get_projection().centerx + 100
+                            path_point[0] = self.player.get_projection().centerx + 50*config.zoom
                         path_point[1] = self.player.get_projection().centery
 
                     xdist = self.get_projection().centerx - path_point[0]
@@ -706,11 +703,12 @@ class DogAI():
             return False
 
 class Betard(Collidable, DogAI):
-    speed = 3
+    speed = 1.5
     attack_pause = 0
 
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
+        self.speed = self.speed*config.zoom
         self.group = 'enemy'
         self.type = 'betard'
         self.group_type = '%s.%s' % (self.group, self.type)
@@ -776,7 +774,7 @@ class Betard(Collidable, DogAI):
                 self.attack_pause = 60
             self.attack_timer -= 1
             if self.attack_timer == 20:
-                height = self.height + 100
+                height = self.height + 50*config.zoom
                 pos = [self.get_projection().centerx, self.get_projection().centery]
                 if self.facing > 0:
                     pos[0] = self.get_height_rect().right
@@ -870,7 +868,7 @@ class Balloon(Simple):
         self.text = text
         self.projection = Rect(0, 0, 0, 0)
         self.timer = 0
-        self.font = pygame.font.Font(filepath("font.ttf"), 14)
+        self.font = pygame.font.Font(filepath("font.ttf"), 7*config.zoom)
         self.update()
 
     def update(self):
@@ -885,7 +883,7 @@ class Balloon(Simple):
         surf.blit(self.image, rect)
         ren = self.font.render(self.text, 1, (0, 0, 0))
         surf.blit(ren, (rect.centerx - ren.get_width() / 2,
-                        rect.centery-ren.get_height() / 2 - 5))
+                        rect.centery-ren.get_height() / 2 - 2*config.zoom))
 
     def get_sprite_rect(self):
         r = self.image.get_rect(center=self.get_projection().center)
@@ -973,7 +971,7 @@ class DialogBar(Simple):
 
         self.projection = self.image.get_rect(topleft = (0, 0))
         self.projection.centerx = self.game.screen.get_rect().centerx
-        self.font = pygame.font.Font(filepath("font.ttf"), 14)
+        self.font = pygame.font.Font(filepath("font.ttf"), 7*config.zoom)
         self.part = 0
 
     def continue_dialog(self):
@@ -988,7 +986,7 @@ class DialogBar(Simple):
 
     def draw(self, surf, rect):
         surf.blit(self.image, self.get_sprite_rect())
-        surf.blit(self.face1, (self.get_sprite_rect().x + 10, self.get_sprite_rect().y + 10))
-        surf.blit(self.face2, (self.get_sprite_rect().x + 566, self.get_sprite_rect().y + 10))
+        surf.blit(self.face1, (self.get_sprite_rect().x + 5*config.zoom, self.get_sprite_rect().y + 5*config.zoom))
+        surf.blit(self.face2, (self.get_sprite_rect().x + 283*config.zoom, self.get_sprite_rect().y + 5*config.zoom))
         ren = self.font.render(self.text[self.part], 1, (255, 255, 255))
         surf.blit(ren, (self.get_sprite_rect().centerx-ren.get_width()/2, self.get_sprite_rect().centery-ren.get_height()/2))
