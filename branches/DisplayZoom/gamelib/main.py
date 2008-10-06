@@ -18,14 +18,14 @@ def main():
     pygame.display.set_caption('Codename: because she said no')
 
     if config.widescreen:
-      config.width = 768
+      config.width = 384*config.zoom
     else:
-      config.width = 640
+      config.width = 320*config.zoom
 
     if config.fullscreen:
-        screen = pygame.display.set_mode((config.width, 480), pygame.FULLSCREEN, 32)
+        screen = pygame.display.set_mode((config.width, 240*config.zoom), pygame.FULLSCREEN, 32)
         pygame.mouse.set_visible(0)
     else:
-        screen = pygame.display.set_mode((config.width, 480))
+        screen = pygame.display.set_mode((config.width, 240*config.zoom))
 
     Game(screen, config)

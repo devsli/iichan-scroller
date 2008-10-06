@@ -2,6 +2,7 @@
 
 import sys, os
 import random
+import config
 
 import pygame
 from pygame.locals import *
@@ -18,17 +19,17 @@ class Camera(object):
     def __init__(self, player, width):
         self.player = player
         self.rect = pygame.display.get_surface().get_rect()
-        self.world = Rect(0, 0, width, 480)
+        self.world = Rect(0, 0, width, 240*config.zoom)
         self.rect.center = self.player.get_height_rect().center
     def update(self):
-        if self.player.get_height_rect().centerx > self.rect.centerx+32:
-            self.rect.centerx = self.player.get_height_rect().centerx-32
-        if self.player.get_height_rect().centerx < self.rect.centerx-32:
-            self.rect.centerx = self.player.get_height_rect().centerx+32
-        if self.player.get_height_rect().centery > self.rect.centery+32:
-            self.rect.centery = self.player.get_height_rect().centery-32
-        if self.player.get_height_rect().centery < self.rect.centery-32:
-            self.rect.centery = self.player.get_height_rect().centery+32
+        if self.player.get_height_rect().centerx > self.rect.centerx+16*config.zoom:
+            self.rect.centerx = self.player.get_height_rect().centerx-16*config.zoom
+        if self.player.get_height_rect().centerx < self.rect.centerx-16*config.zoom:
+            self.rect.centerx = self.player.get_height_rect().centerx+16*config.zoom
+        if self.player.get_height_rect().centery > self.rect.centery+16*config.zoom:
+            self.rect.centery = self.player.get_height_rect().centery-16*config.zoom
+        if self.player.get_height_rect().centery < self.rect.centery-16*config.zoom:
+            self.rect.centery = self.player.get_height_rect().centery+16*config.zoom
         self.rect.clamp_ip(self.world)
 
     def draw_sprites(self, surf, sprites):
@@ -83,8 +84,8 @@ class Game(object):
         self.level = Level(self.lvl)
         self.player = self.level.player
         self.camera = Camera(self.player, self.level.get_size()[0])
-        self.font = pygame.font.Font(filepath("font.ttf"), 16)
-        self.debug_font = pygame.font.Font(filepath("font.ttf"), 10)
+        self.font = pygame.font.Font(filepath("font.ttf"), 8*config.zoom)
+        self.debug_font = pygame.font.Font(filepath("font.ttf"), 5*config.zoom)
 
         DogAI.player = self.player
 
@@ -111,7 +112,7 @@ class Game(object):
 
     def show_death(self):
         ren = self.font.render("Why so slow?", 1, (255, 255, 255))
-        self.screen.blit(ren, (180-ren.get_width()/2, 135))
+        self.screen.blit(ren, (90-ren.get_width()/2, 67))
         pygame.display.flip()
         pygame.time.wait(2500)
 
@@ -121,7 +122,7 @@ class Game(object):
     def winrar(self):
         self.draw_stats()
         ren = self.font.render("You are WINRAR!", 1, (255, 255, 255), (0, 0, 0))
-        self.screen.blit(ren, (320-ren.get_width()/2, 235))
+        self.screen.blit(ren, ((160*config.zoom)-ren.get_width()/2, 117))
         pygame.display.flip()
         pygame.time.wait(2500)
 
@@ -161,14 +162,14 @@ class Game(object):
 
             # FIXME: may be move cleaning into debug (useful during design/development,
             # not necessary in release)
-            pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, self.config.width, 480), 0)
+            pygame.draw.rect(self.screen, (0, 0, 0),  Rect(0, 0, config.width, 240*config.zoom), 0)
             # draw 3 bg layers
             bglayer_speed = [1, 0.9, 0.2]
             for bglayer_num in range(2, -1, -1):
                 for bg in self.level.backgrounds_layers[bglayer_num]:
                     rect = RelRect(bg.texture.get_rect(), self.camera)
                     rect.x = bg.x - self.camera.rect.x * bglayer_speed[bglayer_num]
-                    if rect.colliderect(Rect(0, 0, self.config.width, 480)):
+                    if rect.colliderect(Rect(0, 0, config.width, 240*config.zoom)):
                         self.screen.blit(bg.texture, (bg.x - self.camera.rect.x * bglayer_speed[bglayer_num], bg.y))
 
             self.camera.draw_sprites(self.screen, self.sprites)
@@ -197,7 +198,7 @@ class Game(object):
 
                 for betard in self.monsters:
                     ren = self.debug_font.render("Speed: %d %d" % (betard.xspeed, betard.yspeed), 1, (255, 255, 255))
-                    self.screen.blit(ren, (RelRect(betard.get_height_rect(), self.camera)[0], RelRect(betard.get_height_rect(), self.camera)[1]+16))
+                    self.screen.blit(ren, (RelRect(betard.get_height_rect(), self.camera)[0], RelRect(betard.get_height_rect(), self.camera)[1]+8*config.zoom))
 
             if not self.dialog_mode:
                 self.draw_stats()
@@ -217,22 +218,22 @@ class Game(object):
     def draw_stats(self):
         # HP
         for i in range(self.player.hp):
-            self.screen.blit(self.heart, (self.screen.get_rect().width - 60 - i*30, 16))
+            self.screen.blit(self.heart, (self.screen.get_rect().width - 30*config.zoom - i*15*config.zoom, 8*config.zoom))
         # Ammo
         self.screen.blit(self.cells, (22, 16))
         ren = self.font.render("%d" % self.player.ammo, 1, (255, 255, 255))
-        self.screen.blit(ren, (90-ren.get_width(), 26))
+        self.screen.blit(ren, (90-ren.get_width(), 13*config.zoom))
         # Score
         ren = self.font.render("%09d" % self.player.score, 1, (255, 255, 255))
-        self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 26))
+        self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 13*config.zoom))
         # Out of ammo?
         if self.player.ammo == 0:
             ren = self.font.render("Out of ammo!", 1, (255, 255, 255))
-            self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 80))
+            self.screen.blit(ren, (self.screen.get_rect().centerx-ren.get_width()/2, 40*config.zoom))
         # FPS
         if self.config.debug:
             ren = self.font.render("FPS: %d" % self.clock.get_fps(), 1, (255, 255, 255))
-            self.screen.blit(ren, (22, 80))
+            self.screen.blit(ren, (11*config.zoom, 40*config.zoom))
 
     def start_dialog(self, dialog):
         self.dialog = dialog

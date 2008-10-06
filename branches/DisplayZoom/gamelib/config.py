@@ -5,10 +5,11 @@ fullscreen = 0
 widescreen = 0
 debug = 0
 music = 1
+zoom = 2
 #---------------------------------------------#
 
 def loadSettings(path):
-    global fullscreen, widescreen, debug, music
+    global zoom, fullscreen, widescreen, debug, music
 
     config = ConfigParser.ConfigParser()
     config.read(path)
@@ -23,4 +24,7 @@ def loadSettings(path):
     except: pass
 
     try: music = int(config.get("main", "music"))
+    except: pass
+
+    try: zoom = int(config.get("main", "zoom"))
     except: pass

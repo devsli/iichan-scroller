@@ -1,5 +1,5 @@
 [general]
-size = 3200, 600
+size = 1600, 300
 [background]
 # image - filename or resourcename (from base.lvl)
 # layer - general z-index
@@ -10,30 +10,30 @@ size = 3200, 600
 #   z - local z-index on layer
 
 #     image    layer x     y    z
-f1 = @fence1,  0,   0,    000,  0
-h1 = @house,   0,   800,  000,  0
-f2 = @fence1,  0,   1600, 000,  0
-h2 = @house2,   0,   2400,  000,  0
+f1 = @fence1,   0,   0,    000,  0
+h1 = @house,    0,   400,  000,  0
+f2 = @fence1,   0,   800,  000,  0
+h2 = @house2,   0,  1200, 000,  0
 
-b1 = @bushes,   1,   0,    100,  1
-b2 = @bushes,   1,   800,  100,  0
-b3 = @bushes,   1,   1600, 100,  0
-b4 = @bushes,   1,   2400, 100,  0
+b1 = @bushes,   1,   0,    50,  1
+b2 = @bushes,   1,   400,  50,  0
+b3 = @bushes,   1,   800,  50,  0
+b4 = @bushes,   1,   1200, 50,  0
 
-b5 = @bushes,   1,   -100,  170,  0
+b5 = @bushes,   1,   -50,  85,  0
 
-s1 = @sky,      2,   0,   -100, 1
-s2 = @sky,      2,   790, -100, 1
+s1 = @sky,      2,   0,   -50, 1
+s2 = @sky,      2,   395, -50, 1
 
 [objects]
-#         object       x    y    h,    dir
-p     = player.loli,    220,  440, 0, right
-e1    = enemy.betard,    450,  460, 0,   right
-l1    = powerup.logo,      100,  320, 0,
-h1    = powerup.heart,     200,  320, 0,
-a1    = powerup.ammo,      300,  320, 0,
-b1    = static.box, 320,  440, 0,
-t1    = static.trashcan, 420,  340, 0,
+#         object	x    y    h,    dir
+p     = player.loli,	110,  220, 0, right
+e1    = enemy.betard,	225,  230, 0, right
+l1    = powerup.logo,	50,   160, 0,
+h1    = powerup.heart,	100,  160, 0,
+a1    = powerup.ammo,	150,  160, 0,
+b1    = static.box, 	160,  220, 0,
+t1    = static.trashcan,210,  170, 0,
 
 [triggers]
 #         type           x     y    w    h    obj     x     y    h   dir
@@ -43,5 +43,5 @@ t1    = static.trashcan, 420,  340, 0,
 #spawn4 = spawn_trigger, 2150, 300, 100, 175, betard, 2350, 300, 0,  left
 #spawn5 = spawn_trigger, 2900, 300, 100, 175, betard, 2750, 120, 0,  right
 
-dialog1 = dialog_trigger, 430, 340, 90, 20, dialog1
+dialog1 = dialog_trigger, 215, 170, 45, 10, dialog1
 #dialog2 = dialog_trigger, 2150, 300, 100, 175, dialog2
