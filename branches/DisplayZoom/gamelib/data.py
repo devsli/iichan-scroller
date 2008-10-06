@@ -39,7 +39,6 @@ def load_anim(file, mode="P"):
             break
         pg_surf = pygame.image.fromstring(img.tostring(), img.size, mode)
         pg_surf.set_palette(palette)
-        pg_surf = pygame.transform.scale(pg_surf, (pg_surf.get_width()*config.zoom, pg_surf.get_height()*config.zoom))
         top_left_color = pg_surf.get_at((0, 0))
         if top_left_color == (255, 255, 255, 255):
             pg_surf.set_colorkey(img.info['transparency'])
@@ -56,7 +55,6 @@ def load_image(filename):
     filename = filepath(filename)
     try:
         image = pygame.image.load(filename)
-        image = pygame.transform.scale(image, (image.get_width()*config.zoom, image.get_height()*config.zoom))
     except pygame.error:
         raise SystemExit, "Unable to load: " + filename
     return image.convert_alpha()
