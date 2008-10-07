@@ -222,9 +222,9 @@ class Game(object):
         for i in range(self.player.hp):
             Display.get_instance().blit(self.heart, (Display.get_instance().get_rect().width - 30 - i*15, 8))
         # Ammo
-        Display.get_instance().blit(self.cells, (22, 16))
+        Display.get_instance().blit(self.cells, (22, 14))
         ren = self.font.render("%d" % self.player.ammo, 1, (255, 255, 255))
-        Display.get_instance().blit(ren, (90-ren.get_width(), 13))
+        Display.get_instance().blit(ren, (44, 19))
         # Score
         ren = self.font.render("%09d" % self.player.score, 1, (255, 255, 255))
         Display.get_instance().blit(ren, (Display.get_instance().get_rect().centerx-ren.get_width()/2, 13))

@@ -50,6 +50,6 @@ class Display:
         self.__frontend.blit(surface, coords)
 
     def get_rect(self):
-        return self.__frontend.get_rect()
+        return Rect(0, 0, config.width, 240)
 
     get_instance = Callable(get_instance)
