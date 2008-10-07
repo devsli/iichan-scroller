@@ -1,4 +1,4 @@
-import sys, inspect, pygame
+import sys, inspect, pygame, config
 from pygame.rect import Rect
 
 class EmergencyExit(SystemExit):
@@ -26,14 +26,16 @@ class Display:
 
     def __init__(self):
         self.resized = False
-        self.__frontend = pygame.display.set_mode((320, 240))
+        pygame.display.set_mode((config.width,240))
+        self.__window_size = (config.width*config.zoom,240*config.zoom)
+        self.__frontend = pygame.display.get_surface()
 
     def flip(self):
-        self.__frontend.blit(pygame.transform.scale(self.__frontend.subsurface(Rect(0,0,320,240)), (640,480)), [0,0])
+        self.__frontend.blit(pygame.transform.scale(self.__frontend.subsurface(Rect(0,0,320,240)), self.__window_size), [0,0])
         pygame.display.flip()
         if not(self.resized):
             self.resized = True
-            pygame.display.set_mode((640, 480))
+            pygame.display.set_mode(self.__window_size)
 
     def set_mode(self, resolution=(0,0), flags=pygame.HWSURFACE, depth=0):
         return pygame.display.set_mode(resolution, flags, depth)

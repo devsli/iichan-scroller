@@ -19,7 +19,7 @@ def RelRect(rect, camera):
 class Camera(object):
     def __init__(self, player, width):
         self.player = player
-        self.rect = Display().get_instance().get_surface().get_rect()
+        self.rect = Display.get_instance().get_rect()
         self.world = Rect(0, 0, width, 240)
         self.rect.center = self.player.get_height_rect().center
     def update(self):
