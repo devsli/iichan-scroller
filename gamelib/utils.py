@@ -1,5 +1,6 @@
 import sys, inspect, pygame, config
 from pygame.rect import Rect
+from fx import *
 
 class EmergencyExit(SystemExit):
     '''SystemExit exception with message and traceback'''
@@ -27,10 +28,12 @@ class Display:
     def __init__(self):
         self.resized = False
         pygame.display.set_mode((config.width,240))
+        self.fx = EffectCollection()
         self.__window_size = (config.width*config.zoom,240*config.zoom)
         self.__frontend = pygame.display.get_surface()
 
     def flip(self):
+        self.fx.morph(self.__frontend)
         self.__frontend.blit(pygame.transform.scale(self.__frontend.subsurface(Rect(0,0,320,240)), self.__window_size), [0,0])
         pygame.display.flip()
         if not(self.resized):
