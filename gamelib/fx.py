@@ -1,5 +1,6 @@
 import data, pygame
 from pygame.rect import Rect
+from random import Random
 
 class EffectCollection:
     def __init__(self):
@@ -40,12 +41,12 @@ def quit(sender):
     exit()
 
 class FadeoutEffect(Effect):
-    def __init__(self, to_color, length):
+    def __init__(self, to_color, duration):
         Effect.__init__(self)
-        self.__length = length
-        self.dispose_after = length
+        self.__duration = duration
+        self.dispose_after = duration
         self.__index = 0
-        self.__step_size = 255.0/length
+        self.__step_size = 255.0/duration
         self.__curtain = pygame.display.get_surface().copy()
         self.__curtain.fill(to_color)
 
@@ -57,12 +58,12 @@ class FadeoutEffect(Effect):
 
 
 class FadeinEffect(Effect):
-    def __init__(self, from_color, length):
+    def __init__(self, from_color, duration):
         Effect.__init__(self)
-        self.__length = length
-        self.dispose_after = length
+        self.__duration = duration
+        self.dispose_after = duration
         self.__index = 0
-        self.__step_size = 255.0/length
+        self.__step_size = 255.0/duration
         self.__curtain = pygame.display.get_surface().copy()
         self.__curtain.fill(from_color)
 
@@ -79,7 +80,7 @@ class SequenceEffect(Effect):
 
     def morph(self, surface):
         if (self.__effects.count >= 0):
-            try:
+            try: # HACK: Index out of range after all
                 self.__effects[0].morph(surface)
             except:
                 self.complete()
@@ -93,6 +94,19 @@ class SequenceEffect(Effect):
     def remove(self, effect):
         self.__effects.remove(effect)
 
+class JiggleEffect(Effect):
+    def __init__(self, distance, duration):
+        Effect.__init__(self)
+        self.__distance = distance
+        self.dispose_after = duration
+
+    def morph(self, surface):
+        Effect.morph(self, surface)
+        surface.blit(surface.copy(), [self.__random_offset(),self.__random_offset()])
+
+    def __random_offset(self):
+        return Random().random()*self.__distance
+
 class FlashEffect(SequenceEffect):
     def __init__(self):
         SequenceEffect.__init__(self)
@@ -103,6 +117,6 @@ class QuitEffect(FadeoutEffect):
     """
     Fade display out
     """
-    def __init__(self, length, action=quit):
-        FadeoutEffect.__init__(self, (0,0,0), length)
+    def __init__(self, duration, action=quit):
+        FadeoutEffect.__init__(self, (0,0,0), duration)
         self.add_complete_callback(action)

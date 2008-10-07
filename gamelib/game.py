@@ -151,6 +151,7 @@ class Game(object):
                         else:
                             self.dialog.continue_dialog()
                     if event.key == K_LCTRL:
+                        Display.get_instance().fx.add(JiggleEffect(10,100))
                         self.player.state = "duck"
                     if event.key == K_d:
                         self.config.debug = not self.config.debug
