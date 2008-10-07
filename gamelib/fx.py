@@ -56,7 +56,6 @@ class FadeoutEffect(Effect):
         surface.blit(self.__curtain, [0,0])
         self.__index += self.__step_size
 
-
 class FadeinEffect(Effect):
     def __init__(self, from_color, duration):
         Effect.__init__(self)
