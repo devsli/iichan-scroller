@@ -11,6 +11,7 @@ from data import *
 from sprites import *
 from level import *
 from utils import Display
+from fx import *
 
 
 def RelRect(rect, camera):
@@ -142,7 +143,7 @@ class Game(object):
                     sys.exit()
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        sys.exit()
+                        Display.get_instance().fx.add(FadeoutEffect(50))
                     elif event.key == K_SPACE:
                         if not self.dialog_mode:
                             self.player.fire(self.sprites)
