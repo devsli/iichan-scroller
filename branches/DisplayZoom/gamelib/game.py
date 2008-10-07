@@ -143,9 +143,10 @@ class Game(object):
                     sys.exit()
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        Display.get_instance().fx.add(FadeoutEffect(50))
+                        Display.get_instance().fx.add(QuitEffect(50))
                     elif event.key == K_SPACE:
                         if not self.dialog_mode:
+                            Display.get_instance().fx.add(FlashEffect())
                             self.player.fire(self.sprites)
                         else:
                             self.dialog.continue_dialog()
