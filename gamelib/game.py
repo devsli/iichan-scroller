@@ -226,13 +226,13 @@ class Game(object):
             Display.get_instance().blit(self.heart, (Display.get_instance().get_rect().width - 30 - i*15, 8))
         # Ammo
         Display.get_instance().blit(self.cells, (22, 14))
-        ren = self.font.render("%d" % self.player.ammo, 1, (255, 255, 255))
+        ren = self.font.render("%d" % self.player.get_ammo(), 1, (255, 255, 255))
         Display.get_instance().blit(ren, (44, 19))
         # Score
         ren = self.font.render("%09d" % self.player.score, 1, (255, 255, 255))
         Display.get_instance().blit(ren, (Display.get_instance().get_rect().centerx-ren.get_width()/2, 13))
         # Out of ammo?
-        if self.player.ammo == 0:
+        if not(self.player.has_ammo()):
             ren = self.font.render("Out of ammo!", 1, (255, 255, 255))
             Display.get_instance().blit(ren, (Display.get_instance().get_rect().centerx-ren.get_width()/2, 40))
         # FPS
