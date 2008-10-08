@@ -38,7 +38,6 @@ class SpriteHelper():
         '''Loading rect from file'''
         try:
             if not(self.rect_cache.has_key(sprite_name + rect_name)):
-                print "load " + sprite_name + " : " + rect_name
                 x, y, w, h = self.sprites_file.get(sprite_name, rect_name).split(',')
                 self.rect_cache[sprite_name + rect_name] = [int(x), int(y), int(w), int(h)]
             vals = self.rect_cache[sprite_name + rect_name]
@@ -198,12 +197,49 @@ class Collidable(pygame.sprite.Sprite, SpriteHelper):
     def get_sprite_rect(self):
         return self.get_height_rect()
 
-class Player(Collidable):
+class Annihilable(Collidable):
+    def __init__(self, hp):
+        self.__max_hp = hp
+        self.__hp = hp
+        self.__on_die = []
+        self.__on_hit = []
+
+    def get_hp(self):
+        return self.__hp
+
+    def harm(self, amount):
+        self.__hp -= amount
+        for callback in self.__on_hit:
+            callback()
+        if self.__hp <= 0:
+            self.die()
+
+    def is_healable(self):
+        return self.__hp < self.__max_hp
+
+    def heal(self, amount):
+        self.__hp += amount
+        if self.__hp > self.__max_hp:
+            self.__hp = self.__max_hp
+
+    def die(self):
+        for callback in self.__on_die:
+            callback()
+
+    def set_on_die(self, callback):
+        self.__on_die.append(callback)
+    def set_on_hit(self, callback):
+        self.__on_hit.append(callback)
+
+class Player(Annihilable):
     dfall = 0
     can_jump = 1
+    speed = 3
+    ammo_max = 100
     standing_on = None
     def __init__(self, pos, facing=1, height = 0):
         Collidable.__init__(self, self.groups)
+        Annihilable.__init__(self, 5)
 
         self.group = 'player'
         self.type = 'loli'
@@ -228,9 +264,7 @@ class Player(Collidable):
         self.facing = facing
         self.shoot_timer = 0
         self.hit_timer = 0
-        self.hp = 5
         self.__ammo = 20
-        self.__ammo_max = 100
         self.score = 0
         self.frame = 0
         self.state = "idle"
@@ -240,6 +274,8 @@ class Player(Collidable):
         self.collide(self.game.monsters)
         self.collide(self.game.triggers)
         self.collide(self.game.powerups)
+        self.set_on_die(self.kill)
+        self.set_on_hit(self.hit)
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -259,7 +295,7 @@ class Player(Collidable):
         if self.__ammo < 0: self.__ammo = 0
     def inc_ammo(self, amount=1):
         self.__ammo += amount
-        if self.__ammo > self.__ammo_max: self.__ammo = self.__ammo_max
+        if self.__ammo > Player.ammo_max: self.__ammo = Player.ammo_max
     def get_ammo(self):
         return self.__ammo
 
@@ -328,17 +364,17 @@ class Player(Collidable):
             if self.hit_timer <= 0:
                 if self.state not in ['duck', 'duck_shoot']:
                     if key[K_LEFT]:
-                        dx = -1
+                        dx = -Player.speed
                         self.facing = dx
                         self.state = "walk"
                     elif key[K_RIGHT]:
-                        dx = 1
+                        dx = Player.speed
                         self.facing = dx
                         self.state = "walk"
                     if key[K_DOWN]:
                         # don't allow moving in air
                         if self.height == 0:
-                            dy = 1
+                            dy = Player.speed
                             self.state = "walk"
                         # but allow jump off from barrier
                         elif self.standing_on != None and self.can_jump:
@@ -349,7 +385,7 @@ class Player(Collidable):
                     elif key[K_UP]:
                         # don't allow moving in air
                         if self.height == 0:
-                            dy = -1
+                            dy = -Player.speed
                             self.state = "walk"
                         # but allow jump off from barrier
                         elif self.standing_on != None and self.can_jump:
@@ -401,7 +437,7 @@ class Player(Collidable):
         if dx < 0:
             self.image = self.left_images[self.frame/4 % len(self.left_images)]
 
-        self.move(2*dx, 2*dy)
+        self.move(dx, dy)
 
         # Timers and frames
         self.frame -= 1
@@ -416,7 +452,7 @@ class Player(Collidable):
 
     def kill(self):
         pygame.sprite.Sprite.kill(self)
-        PlayerDie(self.rect.center, self.facing)
+#        PlayerDie(self.rect.center, self.facing)
 
     def get_height_rect(self):
         if self.state in ['walk', 'idle', 'pain', 'stand_shoot', 'jump', 'fall']:
@@ -493,7 +529,10 @@ class PlayerShot(Collidable):
         pygame.sprite.Sprite.kill(self)
 
     def on_collision(self, side, sprite, group, dx, dy):
-        sprite.hit()
+        try:
+            sprite.harm(1)
+        except:
+            pass
         self.kill()
 
     def get_sprite_rect(self):
@@ -508,7 +547,7 @@ class PlayerShot(Collidable):
         return rect
 
 class Fireball(Collidable):
-
+    power = 1
     def __init__(self, pos, facing, img, initiator, height):
         Collidable.__init__(self, self.groups)
         self.facing = facing
@@ -554,7 +593,10 @@ class Fireball(Collidable):
         pygame.sprite.Sprite.kill(self)
 
     def on_collision(self, side, sprite, group, dx, dy):
-        sprite.hit()
+        try:
+            sprite.harm(Fireball.power)
+        except:
+            pass
         self.kill()
 
     def get_height_rect(self):
@@ -601,8 +643,8 @@ class PowerUp(Collidable):
         if self.type == "ammo":
             self.game.player.inc_ammo(25)
             self.kill()
-        elif self.type == "heart" and self.game.player.hp < 5:
-            self.game.player.hp += 1
+        elif self.type == "heart" and self.game.player.is_healable():
+            self.game.player.heal(1)
             self.kill()
         elif self.type == "logo":
             self.game.player.score += 25
@@ -716,12 +758,13 @@ class DogAI():
         else:
             return False
 
-class Betard(Collidable, DogAI):
+class Betard(Annihilable, DogAI):
     speed = 1.5
     attack_pause = 0
 
     def __init__(self, pos, type = 1, facing = 1):
         Collidable.__init__(self, self.groups)
+        Annihilable.__init__(self, 2)
         self.speed = self.speed
         self.group = 'enemy'
         self.type = 'betard'
@@ -746,7 +789,6 @@ class Betard(Collidable, DogAI):
         self.images = None
         self.projection = self.load_rect(self.group_type, 'projection')
         self.projection.center = pos
-        self.life = 2
 
         self.facing = facing
         self.set_image()
@@ -754,7 +796,8 @@ class Betard(Collidable, DogAI):
         self.collide(self.game.static)
         self.collide(self.game.players)
         self.collide(self.game.monsters)
-
+        self.set_on_die(self.kill)
+        self.set_on_hit(self.hit)
 
     def set_state(self, state = "idle"):
         self.state = state
@@ -770,9 +813,6 @@ class Betard(Collidable, DogAI):
         pygame.sprite.Sprite.kill(self)
 
     def update(self):
-        if self.life <= 0:
-            self.kill()
-
         DogAI.update(self)
 
         if self.xspeed > 0:
@@ -822,8 +862,7 @@ class Betard(Collidable, DogAI):
                 self.set_state("walk")
 
     def hit(self):
-        self.life -= 1
-        if self.life > 0 and self.state != "attack":
+        if self.state != "attack":
             if random.randrange(10) in range(4):
                 Balloon(self, "OUCH!!!")
             self.set_state("pain")
