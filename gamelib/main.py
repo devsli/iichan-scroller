@@ -28,4 +28,4 @@ def main():
     else:
         Display.get_instance().set_mode((config.width, 240))
 
-    Game(config)
+    Game.get_instance()

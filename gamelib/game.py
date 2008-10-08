@@ -10,7 +10,7 @@ from pygame.locals import *
 from data import *
 from sprites import *
 from level import *
-from utils import Display
+from utils import Display, Callable
 from fx import *
 
 
@@ -41,9 +41,16 @@ class Camera(object):
 
 class Game(object):
     dialog_mode = False
+    __instance = None
 
-    def __init__(self, config, continuing=False):
-        self.config = config
+    def get_instance():
+        if not(Game.__instance):
+            Game.__instance = Game()
+        return Game.__instance
+
+    get_instance = Callable(get_instance)
+
+    def __init__(self, continuing=False):
         self.sprites = pygame.sprite.LayeredUpdates()
         self.shots = pygame.sprite.LayeredUpdates()
         self.monsters = pygame.sprite.LayeredUpdates()
@@ -90,8 +97,10 @@ class Game(object):
 
         DogAI.player = self.player
 
+        self.player.set_on_die(self.player_died)
+
         self.running = 1
-        if self.config.music == 1:
+        if config.music == 1:
             self.music = "because_she_said_no.ogg"
             play_music(self.music, 0.5)
 
@@ -113,8 +122,9 @@ class Game(object):
 
     def show_death(self):
         ren = self.font.render("Why so slow?", 1, (255, 255, 255))
-        self.screen.blit(ren, (90-ren.get_width()/2, 67))
-        pygame.display.flip()
+        display = Display.get_instance()
+        display.blit(ren, (90-ren.get_width()/2, 67))
+        display.flip()
         pygame.time.wait(2500)
 
     def gameover_screen(self):
@@ -146,15 +156,13 @@ class Game(object):
                         Display.get_instance().fx.add(QuitEffect(50))
                     elif event.key == K_SPACE:
                         if not self.dialog_mode:
-                            Display.get_instance().fx.add(FlashEffect())
                             self.player.fire(self.sprites)
                         else:
                             self.dialog.continue_dialog()
                     if event.key == K_LCTRL:
-                        Display.get_instance().fx.add(JiggleEffect(10,100))
                         self.player.state = "duck"
                     if event.key == K_d:
-                        self.config.debug = not self.config.debug
+                        config.debug = not config.debug
 
             # Updating all sprites
             if not self.dialog_mode:
@@ -188,7 +196,7 @@ class Game(object):
                 self.sprites.move_to_front(sprite)
 
             # show bboxes for debugging and easy objects creating
-            if self.config.debug:
+            if config.debug:
                 for sprite in self.sprites:
                     Display.get_instance().draw_rect((0, 255, 0),  RelRect(sprite.get_projection(), self.camera), 1)
                     Display.get_instance().draw_rect((255, 0, 0),  RelRect(sprite.get_height_rect(), self.camera), 1)
@@ -207,22 +215,19 @@ class Game(object):
             if not self.dialog_mode:
                 self.draw_stats()
 
-            # To be or not to be?
-            if not self.player.alive() and not self.playerdying:
-                if self.lives <= 0:
-                    self.gameover_screen()
-                else:
-                    self.show_death()
-                    self.lives -= 1
-                    self.redo_level()
-
             Display.get_instance().flip()
-            #pygame.display.flip()
-            #pygame.time.wait(2)
+
+    def player_died(self):
+        if self.lives <= 0:
+            self.gameover_screen()
+        else:
+            self.show_death()
+            self.lives -= 1
+            self.redo_level()
 
     def draw_stats(self):
         # HP
-        for i in range(self.player.hp):
+        for i in range(self.player.get_hp()):
             Display.get_instance().blit(self.heart, (Display.get_instance().get_rect().width - 30 - i*15, 8))
         # Ammo
         Display.get_instance().blit(self.cells, (22, 14))
@@ -236,7 +241,7 @@ class Game(object):
             ren = self.font.render("Out of ammo!", 1, (255, 255, 255))
             Display.get_instance().blit(ren, (Display.get_instance().get_rect().centerx-ren.get_width()/2, 40))
         # FPS
-        if self.config.debug:
+        if config.debug:
             ren = self.font.render("FPS: %d" % self.clock.get_fps(), 1, (255, 255, 255))
             Display.get_instance().blit(ren, (11, 40))
 
