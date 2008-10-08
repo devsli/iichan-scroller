@@ -229,7 +229,8 @@ class Player(Collidable):
         self.shoot_timer = 0
         self.hit_timer = 0
         self.hp = 5
-        self.ammo = 20
+        self.__ammo = 20
+        self.__ammo_max = 100
         self.score = 0
         self.frame = 0
         self.state = "idle"
@@ -251,11 +252,22 @@ class Player(Collidable):
     def duck(self):
         self.set_state("duck")
 
+    def has_ammo(self):
+        return self.__ammo > 0
+    def dec_ammo(self, amount=1):
+        self.__ammo -= amount
+        if self.__ammo < 0: self.__ammo = 0
+    def inc_ammo(self, amount=1):
+        self.__ammo += amount
+        if self.__ammo > self.__ammo_max: self.__ammo = self.__ammo_max
+    def get_ammo(self):
+        return self.__ammo
+
     def fire(self, spritesArray):
         """
         Fire, push bullet sprite into spritesArray
         """
-        if (self.ammo > 0) and (self.shoot_timer <= 0):
+        if self.has_ammo() and (self.shoot_timer <= 0):
             if self.state in ["duck", "duck_shoot", "walk"]:
                 height = self.height + 30
             else:
@@ -283,7 +295,7 @@ class Player(Collidable):
                 self.state = "stand_shoot"
             elif self.state in ["duck"]:
                 self.state = "duck_shoot"
-        self.ammo -= 1
+        self.dec_ammo()
 
     def update(self):
         dx = 0
@@ -376,10 +388,6 @@ class Player(Collidable):
                 self.state = "idle"
 
         self.set_state(self.state)
-
-        # Ammo control
-        if self.ammo < 0: self.ammo = 0
-        elif self.ammo > 100: self.ammo = 100
 
         # Looking left or right?
         if self.facing > 0:
@@ -590,8 +598,8 @@ class PowerUp(Collidable):
         return self.get_fixed_rect(self.group_type, 'height', self.projection, self.height)
 
     def collect(self):
-        if self.type == "ammo" and self.game.player.hp < 100:
-            self.game.player.ammo += 25
+        if self.type == "ammo":
+            self.game.player.inc_ammo(25)
             self.kill()
         elif self.type == "heart" and self.game.player.hp < 5:
             self.game.player.hp += 1
